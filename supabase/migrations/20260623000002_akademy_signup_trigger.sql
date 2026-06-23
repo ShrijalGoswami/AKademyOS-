@@ -1,20 +1,20 @@
--- Migration: signup trigger that creates an akademy.profiles row per auth user
+-- Migration: signup trigger that creates an public.profiles row per auth user
 --
--- This is the ONLY sanctioned INSERT path into akademy.profiles. RLS denies
+-- This is the ONLY sanctioned INSERT path into public.profiles. RLS denies
 -- INSERT to anon/authenticated (no INSERT grant, no INSERT policy); this
 -- SECURITY DEFINER function runs as its owner and so bypasses that restriction.
 --
 -- `role` is deliberately NOT set here, so it falls back to the column default
 -- ('student'). A new user therefore can never self-assign an elevated role.
 
-create or replace function akademy.handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = akademy, public
+set search_path = public
 as $$
 begin
-  insert into akademy.profiles (id, full_name, email)
+  insert into public.profiles (id, full_name, email)
   values (
     new.id,
     nullif(new.raw_user_meta_data ->> 'full_name', ''),
@@ -29,4 +29,4 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row
-  execute function akademy.handle_new_user();
+  execute function public.handle_new_user();
