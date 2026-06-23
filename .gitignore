@@ -19,3 +19,6 @@ out/
 
 # OS
 .DS_Store
+
+# Reference files (we don't want to commit someone else's code)
+Frontend Reference/

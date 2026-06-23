@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, Send, LucideIcon } from "lucide-react";
+import { RefreshCw, Send, BookOpen, ClipboardList, Zap, type LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ScoreType } from "@/types";
 
+// Icons live here (a Client Component) so Server Components don't have to pass
+// a function across the server/client boundary.
+const SCORE_TYPE_ICON: Record<ScoreType, LucideIcon> = {
+  homework: BookOpen,
+  offline_test: ClipboardList,
+  quiz: Zap,
+};
+
 interface Props {
   title: string;
-  icon: LucideIcon;
   scoreType: ScoreType;
   lastImport?: string;
   rowCount?: number;
@@ -19,12 +26,12 @@ interface Props {
 
 export function ImportCard({
   title,
-  icon: Icon,
   scoreType,
   lastImport,
   rowCount = 0,
   publishedCount = 0,
 }: Props) {
+  const Icon = SCORE_TYPE_ICON[scoreType];
   const [fetching, setFetching] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
