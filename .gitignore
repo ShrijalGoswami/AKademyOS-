@@ -1,0 +1,21 @@
+# Python
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+
+# Environment files (ignored at any depth, in subfolders too) — keep the examples
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# OS
+.DS_Store
