@@ -56,5 +56,7 @@ npm run dev
 
 ## Environment variables
 
-- `backend/.env.example` — `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `LLM_API_KEY`
+- `backend/.env.example` — `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET` (required), `TUTOR_URL`, `TUTOR_API_KEY` (optional)
 - `frontend/.env.local.example` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Copy each `*.example` to its real counterpart (`backend/.env`, `frontend/.env.local`) and paste in values; the real files are git-ignored. The backend validates required keys on startup via `app/core/config.py` and fails fast if any are missing.
