@@ -34,11 +34,11 @@ export async function POST(
     query = query.eq("week_number", body.weekNumber);
   }
 
-  const { error, count } = await query.select("*", { count: "exact", head: false });
+  const { data, error } = await query.select("*");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ count: count ?? 0 });
+  return NextResponse.json({ count: data ? data.length : 0 });
 }

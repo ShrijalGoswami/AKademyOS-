@@ -61,6 +61,7 @@ export interface QuizScore {
   user_email: string;
   week_number: number;
   quiz_title: string | null;
+  subject: string | null;
   score: number;
   max_score: number;
   published: boolean;
@@ -128,6 +129,7 @@ export interface QuizSheetRow {
   email: string;
   week: number;
   quiz_title: string;
+  subject: string;
   score: number;
   max_score: number;
 }
