@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -19,20 +21,26 @@ export function StudentManagementTable({ students }: Props) {
             <TableHead>Homework</TableHead>
             <TableHead>Offline Tests</TableHead>
             <TableHead>Quizzes</TableHead>
+            <TableHead className="text-right">Grades</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {students.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-text-muted py-8">
+              <TableCell colSpan={6} className="text-center text-text-muted py-8">
                 No students found.
               </TableCell>
             </TableRow>
           ) : (
             students.map((s) => (
-              <TableRow key={s.id}>
+              <TableRow
+                key={s.id}
+                className="cursor-pointer transition-colors hover:bg-surface-elevated"
+              >
                 <TableCell className="font-medium text-text-primary">
-                  {s.full_name ?? "—"}
+                  <Link href={`/dashboard/admin/students/${encodeURIComponent(s.email)}`} className="block">
+                    {s.full_name ?? "—"}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-text-secondary text-sm">{s.email}</TableCell>
                 <TableCell>
@@ -49,6 +57,15 @@ export function StudentManagementTable({ students }: Props) {
                   <Badge variant={s.quiz_count > 0 ? "success" : "muted"}>
                     {s.quiz_count} quizzes
                   </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Link
+                    href={`/dashboard/admin/students/${encodeURIComponent(s.email)}`}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover"
+                  >
+                    View
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </TableCell>
               </TableRow>
             ))
