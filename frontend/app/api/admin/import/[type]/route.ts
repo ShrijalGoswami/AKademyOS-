@@ -61,15 +61,28 @@ export async function POST(
 
     if (validRows.length > 0) {
       const upsertData = buildUpsertData(type, validRows as any);
+      
+      // Deduplicate upsertData to avoid PostgreSQL "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
+      // Since the spreadsheet list is chronological, later rows represent the latest entry, which naturally overwrites earlier ones.
+      const uniqueDataMap = new Map<string, any>();
+      for (const row of upsertData) {
+        const key = type === "quiz"
+          ? `${row.user_email}_${row.week_number}_${row.quiz_title}`
+          : `${row.user_email}_${row.week_number}`;
+        uniqueDataMap.set(key, row);
+      }
+      const deduplicatedData = Array.from(uniqueDataMap.values());
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from(tableFor(type)) as any).upsert(upsertData, {
+      const { error } = await (supabase.from(tableFor(type)) as any).upsert(deduplicatedData, {
         onConflict: type === "quiz" ? "user_email,week_number,quiz_title" : "user_email,week_number",
       });
       if (error) {
         errors.push(error.message);
         rowsFailed = rows.length;
       } else {
-        rowsImported = validRows.length;
+        rowsImported = deduplicatedData.length;
+        rowsFailed = rows.length - deduplicatedData.length;
       }
     }
   } catch (err: unknown) {
@@ -156,6 +169,7 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
     user_email: r.email,
     week_number: r.week,
     quiz_title: r.quiz_title,
+    subject: r.subject,
     score: r.score,
     max_score: r.max_score,
     published: false,
