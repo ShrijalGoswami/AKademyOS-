@@ -6,6 +6,8 @@ export interface StudentLink {
   description: string;
   url: string;
   icon: LucideIcon;
+  /** Internal app route (uses Next router, same tab) vs. external link (new tab). */
+  internal?: boolean;
 }
 
 /**
@@ -19,8 +21,9 @@ export const STUDENT_LINKS: StudentLink[] = [
     key: "ai-agent",
     label: "AI Agent",
     description: "Ask the study assistant",
-    url: "https://REPLACE_ME/ai-agent",
+    url: "/dashboard/student/ask-ak",
     icon: Bot,
+    internal: true,
   },
   {
     key: "akademy-plus",
