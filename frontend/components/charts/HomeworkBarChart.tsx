@@ -20,12 +20,23 @@ interface Props {
 const ALL_WEEKS = Array.from({ length: 10 }, (_, i) => i + 1);
 const EMPTY_COLOR = "var(--border-color)";
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  name?: string;
+  value?: number | string;
+  fill?: string;
+}
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-border bg-surface-elevated p-3 shadow-xl text-xs">
       <p className="mb-2 font-semibold text-text-primary">Week {label}</p>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
           <span className="h-2 w-2 rounded-full" style={{ background: p.fill }} />
           <span className="text-text-secondary">{p.name}:</span>

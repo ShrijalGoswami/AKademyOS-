@@ -136,7 +136,10 @@ export default function AskAK() {
         {/* ---- Header ---- */}
         <header style={styles.header}>
           <div style={styles.logoWrap}>
-            {/* Logo served from /public/ask-ak-logo.jpeg */}
+            {/* Logo served from /public/ask-ak-logo.jpeg. Plain <img> keeps this
+                component self-contained/portable (no next/image dependency) and
+                lets the onError fallback work. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ask-ak-logo.jpeg"
               alt="Ask AK logo"

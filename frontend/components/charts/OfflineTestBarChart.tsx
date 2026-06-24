@@ -19,7 +19,17 @@ interface Props {
 const TEST_WEEKS = [1, 5, 10] as const;
 const EMPTY_COLOR = "var(--border-color)";
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  value?: number | string;
+  payload?: { maxScore?: number };
+}
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
@@ -27,8 +37,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <p className="mb-1 font-semibold text-text-primary">Week {label}</p>
       <p className="text-text-secondary">
         Score: <span className="font-medium text-text-primary">{d.value}</span>
-        {d.payload.maxScore > 0 && (
-          <span className="text-text-muted"> / {d.payload.maxScore}</span>
+        {(d.payload?.maxScore ?? 0) > 0 && (
+          <span className="text-text-muted"> / {d.payload?.maxScore}</span>
         )}
       </p>
     </div>

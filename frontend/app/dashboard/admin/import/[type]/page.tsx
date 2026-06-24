@@ -130,6 +130,8 @@ export default function ImportDetailPage() {
             </h2>
             <SheetPreviewTable
               type={type}
+              // Preview rows are fetched as untyped JSON; cast to the table's row union.
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               rows={preview.rows as any}
               invalidEmails={preview.invalidEmails}
               onSave={handleSave}

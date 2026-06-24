@@ -60,7 +60,7 @@ export async function POST(
     rowsFailed = rows.length - validRows.length;
 
     if (validRows.length > 0) {
-      const upsertData = buildUpsertData(type, validRows as any);
+      const upsertData = buildUpsertData(type, validRows);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from(tableFor(type)) as any).upsert(upsertData, {
         onConflict: type === "quiz" ? "user_email,week_number,quiz_title" : "user_email,week_number",
