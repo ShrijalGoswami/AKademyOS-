@@ -42,18 +42,122 @@ export async function fetchHomeworkSheet(): Promise<HomeworkSheetRow[]> {
 }
 
 export async function fetchOfflineTestSheet(): Promise<OfflineTestSheetRow[]> {
-  const rows = await readSheet(
-    process.env.GOOGLE_SHEETS_OFFLINE_TEST_SPREADSHEET_ID!,
-    "Sheet1!A:D"
-  );
-  return rows
-    .filter((r) => r.length >= 4)
-    .map((r) => ({
-      email: String(r[0]).trim().toLowerCase(),
-      week: parseInt(r[1], 10),
-      score: parseFloat(r[2]) || 0,
-      max_score: parseFloat(r[3]) || 100,
-    }));
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.GOOGLE_SHEETS_OFFLINE_TEST_SPREADSHEET_ID;
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_OFFLINE_TEST_SPREADSHEET_ID is not configured");
+  }
+
+  // 1. Get all sheet names dynamically
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheetNames = meta.data.sheets
+    ?.map((s) => s.properties?.title)
+    .filter(Boolean) as string[] || [];
+
+  const offlineRows: OfflineTestSheetRow[] = [];
+
+  // Helper to parse cell score (e.g., "8/11" or "2.5/6/2026" date-format bug)
+  const parseScoreAndMax = (val: string | undefined): { score: number; maxScore: number } | null => {
+    if (!val) return null;
+    const cleanVal = val.trim();
+    if (!cleanVal || /no\s*attempt/i.test(cleanVal)) return null;
+
+    // Match date-formatted score bug (e.g. 2.5/6/2026)
+    const dateMatch = cleanVal.match(/^([\d.]+)\/([\d.]+)\/\d{4}$/);
+    if (dateMatch) {
+      return {
+        score: parseFloat(dateMatch[1]),
+        maxScore: parseFloat(dateMatch[2]),
+      };
+    }
+
+    // Match standard fraction (e.g. 8/11)
+    const fractionMatch = cleanVal.match(/^([\d.]+)\s*\/\s*([\d.]+)$/);
+    if (fractionMatch) {
+      return {
+        score: parseFloat(fractionMatch[1]),
+        maxScore: parseFloat(fractionMatch[2]),
+      };
+    }
+
+    return null;
+  };
+
+  // 2. Process each sheet
+  for (const sheetName of sheetNames) {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A:Z`,
+    });
+
+    const rows = res.data.values || [];
+    if (rows.length < 2) continue;
+
+    const headers = rows[0];
+    
+    // Find index of the email column (containing "email" case-insensitively)
+    const emailIdx = headers.findIndex((h) => h?.toLowerCase().includes("email"));
+    const actualEmailIdx = emailIdx >= 0 ? emailIdx : 2;
+
+    // Find index of the week column (containing "week" case-insensitively)
+    const weekIdx = headers.findIndex((h) => h?.toLowerCase().includes("week"));
+
+    // Find all subject/topic columns (index >= 3 and not the week column)
+    const subjectCols: { colIdx: number; subject: string; topic: string }[] = [];
+    for (let i = 3; i < headers.length; i++) {
+      if (i === weekIdx) continue;
+      const header = headers[i]?.trim();
+      if (!header) continue;
+
+      // Parse subject and topic
+      let subject = header;
+      let topic = "General";
+      if (header.includes(" - ")) {
+        const parts = header.split(" - ");
+        subject = parts[0].trim();
+        topic = parts[1].trim();
+      }
+      subjectCols.push({ colIdx: i, subject, topic });
+    }
+
+    // Parse each student row
+    for (let rIdx = 1; rIdx < rows.length; rIdx++) {
+      const r = rows[rIdx];
+      if (!r || r.length === 0) continue;
+
+      const scholarName = r[0]?.trim();
+      if (!scholarName || scholarName.toLowerCase().includes("scholar")) continue; // Skip header fallback
+
+      // Extract email (might be empty, which we will resolve in the API route using name matching)
+      const email = r[actualEmailIdx] ? String(r[actualEmailIdx]).trim().toLowerCase() : "";
+
+      // Extract week number
+      let week = 1;
+      if (weekIdx >= 0 && r[weekIdx]) {
+        week = parseInt(String(r[weekIdx]).replace(/\D/g, ""), 10) || 1;
+      }
+
+      // Extract scores for each subject/topic column
+      for (const col of subjectCols) {
+        const cellValue = r[col.colIdx];
+        const scoreInfo = parseScoreAndMax(cellValue);
+        if (scoreInfo) {
+          offlineRows.push({
+            email,
+            week,
+            subject: col.subject,
+            topic: col.topic,
+            score: scoreInfo.score,
+            max_score: scoreInfo.maxScore,
+            scholar_name: scholarName,
+          });
+        }
+      }
+    }
+  }
+
+  return offlineRows;
 }
 
 export async function fetchQuizSheet(): Promise<QuizSheetRow[]> {

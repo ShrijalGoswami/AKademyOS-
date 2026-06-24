@@ -55,6 +55,8 @@ export default async function AdminStudentDetail({
     week: s.week_number as 1 | 5 | 10,
     score: s.score,
     maxScore: s.max_score,
+    subject: s.subject,
+    topic: s.topic,
   }));
 
   const quizChartData: QuizChartData[] = quizzes.map((s) => ({

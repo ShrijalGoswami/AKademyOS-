@@ -51,7 +51,13 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
                   <TableHead>Long Ans</TableHead>
                 </>
               )}
-              {type === "offline_test" && <TableHead>Score</TableHead>}
+              {type === "offline_test" && (
+                <>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Score</TableHead>
+                </>
+              )}
               {type === "quiz" && (
                 <>
                   <TableHead>Quiz Title</TableHead>
@@ -86,7 +92,15 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
                   })()}
                   {type === "offline_test" && (() => {
                     const r = row as OfflineTestSheetRow;
-                    return <TableCell>{r.score}/{r.max_score}</TableCell>;
+                    return (
+                      <>
+                        <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">
+                          {r.subject}
+                        </TableCell>
+                        <TableCell className="text-text-primary">{r.topic}</TableCell>
+                        <TableCell>{r.score}/{r.max_score}</TableCell>
+                      </>
+                    );
                   })()}
                   {type === "quiz" && (() => {
                     const r = row as QuizSheetRow;

@@ -50,6 +50,8 @@ export interface OfflineTestScore {
   id: string;
   user_email: string;
   week_number: 1 | 5 | 10;
+  subject: string | null;
+  topic: string | null;
   score: number;
   max_score: number;
   published: boolean;
@@ -96,6 +98,8 @@ export interface OfflineTestChartData {
   week: 1 | 5 | 10;
   score: number;
   maxScore: number;
+  subject?: string | null;
+  topic?: string | null;
 }
 
 export interface QuizChartData {
@@ -121,8 +125,11 @@ export interface HomeworkSheetRow {
 export interface OfflineTestSheetRow {
   email: string;
   week: number;
+  subject: string;
+  topic: string;
   score: number;
   max_score: number;
+  scholar_name?: string;
 }
 
 export interface QuizSheetRow {
