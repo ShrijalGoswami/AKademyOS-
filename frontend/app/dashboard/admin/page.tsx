@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -43,7 +45,7 @@ export default async function AdminDashboard() {
           .in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("offline_test_scores").select("user_email").in("user_email", emails)
+      ? supabase.from("offline_test_scores").select("user_email, week_number").in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
       ? supabase.from("quiz_scores").select("user_email").in("user_email", emails)
@@ -51,7 +53,7 @@ export default async function AdminDashboard() {
   ]);
 
   const hwRows = (hwRes.data ?? []) as HwRow[];
-  const otRows = (otRes.data ?? []) as { user_email: string }[];
+  const otRows = (otRes.data ?? []) as { user_email: string; week_number: number }[];
   const qzRows = (qzRes.data ?? []) as { user_email: string }[];
 
   const countBy = (arr: { user_email: string }[]) =>
@@ -61,8 +63,20 @@ export default async function AdminDashboard() {
     }, {});
 
   const hwCountMap = countBy(hwRows);
-  const otMap = countBy(otRows);
   const qzMap = countBy(qzRows);
+
+  // Count unique weeks for offline tests
+  const otMap: Record<string, number> = {};
+  const otUniqueWeeks: Record<string, Set<number>> = {};
+  for (const r of otRows) {
+    if (!otUniqueWeeks[r.user_email]) {
+      otUniqueWeeks[r.user_email] = new Set();
+    }
+    otUniqueWeeks[r.user_email].add(r.week_number);
+  }
+  for (const email of Object.keys(otUniqueWeeks)) {
+    otMap[email] = otUniqueWeeks[email].size;
+  }
 
   // Per-student homework percentage (sum of all weeks)
   const pctSum: Record<string, { sum: number; n: number }> = {};

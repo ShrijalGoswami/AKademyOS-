@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -82,7 +84,7 @@ export default async function StudentDashboard() {
           <StatCard icon={TrendingUp} value={`${avgScore}%`} label="Average Homework Score" sublabel={`across ${trend.length} week${trend.length === 1 ? "" : "s"}`} />
           <StatCard icon={BookOpen} value={homework.length} label="Homework Weeks" iconColor="text-accent" iconBg="bg-accent/10" />
           <StatCard icon={Zap} value={quizzes.length} label="Quizzes Completed" iconColor="text-warning" iconBg="bg-warning/10" />
-          <StatCard icon={ClipboardList} value={offlineTests.length} label="Offline Tests Taken" iconColor="text-primary" iconBg="bg-primary/10" />
+          <StatCard icon={ClipboardList} value={new Set(offlineTests.map((t) => t.week_number)).size} label="Offline Tests Taken" iconColor="text-primary" iconBg="bg-primary/10" />
         </section>
 
         {/* Score overview charts */}
