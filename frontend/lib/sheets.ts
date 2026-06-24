@@ -59,15 +59,53 @@ export async function fetchOfflineTestSheet(): Promise<OfflineTestSheetRow[]> {
 export async function fetchQuizSheet(): Promise<QuizSheetRow[]> {
   const rows = await readSheet(
     process.env.GOOGLE_SHEETS_QUIZ_SPREADSHEET_ID!,
-    "Sheet1!A:E"
+    "Sheet1!A:K"
   );
-  return rows
-    .filter((r) => r.length >= 5)
-    .map((r) => ({
-      email: String(r[0]).trim().toLowerCase(),
-      week: parseInt(r[1], 10),
-      quiz_title: String(r[2]).trim(),
-      score: parseFloat(r[3]) || 0,
-      max_score: parseFloat(r[4]) || 100,
-    }));
+  
+  let currentWeek: number | null = null;
+  const quizRows: QuizSheetRow[] = [];
+  
+  for (const r of rows) {
+    if (r.length === 0) continue;
+    
+    const isStudentRow = r[0] && r[0].includes("@");
+    
+    if (!isStudentRow) {
+      // Check if this row is a week header (e.g., "WEEK 2", "Week 3", etc.)
+      const rowText = r.join(" ").trim();
+      const weekMatch = rowText.match(/WEEK\s*(\d+)/i);
+      if (weekMatch) {
+        currentWeek = parseInt(weekMatch[1], 10);
+      }
+      continue; // Skip non-student rows (headers/metadata)
+    }
+    
+    // If it's a regular student data row
+    if (r.length >= 8) {
+      const email = String(r[0]).trim().toLowerCase();
+      
+      // 1. If there's a dedicated Week column (index 10 / column K)
+      // 2. Else if we scanned a WEEK header row
+      // 3. Else fallback to Year column (index 2)
+      let week = 1;
+      if (r.length >= 11 && r[10]) {
+        week = parseInt(String(r[10]).replace(/\D/g, ""), 10) || 1;
+      } else if (currentWeek !== null) {
+        week = currentWeek;
+      } else {
+        week = parseInt(String(r[2]).replace(/\D/g, ""), 10) || 1;
+      }
+        
+      quizRows.push({
+        email,
+        week,
+        subject: String(r[3]).trim(), // Column D
+        quiz_title: String(r[4]).trim(), // Column E (Topic)
+        score: parseFloat(r[6]) || 0, // Column G
+        max_score: parseFloat(r[7]) || 100, // Column H
+      });
+    }
+  }
+  
+  return quizRows;
 }
