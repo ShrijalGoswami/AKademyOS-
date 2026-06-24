@@ -117,15 +117,17 @@ export function ScoreSummaryTable({ activeTab, homework, offlineTests, quizzes }
       <TableHeader>
         <TableRow>
           <TableHead>Week</TableHead>
-          <TableHead>Quiz</TableHead>
+          <TableHead>Subject</TableHead>
+          <TableHead>Topic</TableHead>
           <TableHead>Score</TableHead>
+          <TableHead>Total</TableHead>
           <TableHead>Percentage</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {quizzes.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={4} className="text-center text-text-muted py-8">
+            <TableCell colSpan={6} className="text-center text-text-muted py-8">
               No quiz scores published yet.
             </TableCell>
           </TableRow>
@@ -133,9 +135,13 @@ export function ScoreSummaryTable({ activeTab, homework, offlineTests, quizzes }
           quizzes.map((s) => (
             <TableRow key={s.id}>
               <TableCell className="font-medium text-text-primary">Week {s.week_number}</TableCell>
-              <TableCell className="text-text-secondary">{s.quiz_title ?? "—"}</TableCell>
+              <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">{s.subject ?? "—"}</TableCell>
+              <TableCell className="text-text-primary">{s.quiz_title ?? "—"}</TableCell>
               <TableCell className={cn(getScoreColor(s.score, s.max_score))}>
-                {s.score} / {s.max_score}
+                {s.score}
+              </TableCell>
+              <TableCell className="text-text-secondary">
+                {s.max_score}
               </TableCell>
               <TableCell>
                 <Badge
