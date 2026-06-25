@@ -25,35 +25,40 @@ async function readSheet(spreadsheetId: string, range: string): Promise<string[]
 export async function fetchHomeworkSheet(): Promise<HomeworkSheetRow[]> {
   const rows = await readSheet(
     process.env.GOOGLE_SHEETS_HOMEWORK_SPREADSHEET_ID!,
-    "Sheet1!A:G"
+    "Sheet1!A:J"
   );
 
-  const parseFraction = (val: string | undefined, defaultMax = 100) => {
-    if (!val) return { score: 0, max: defaultMax };
-    const clean = val.trim();
-    if (!clean || /n\/a/i.test(clean) || /no\s*attempt/i.test(clean)) {
+  const parseColumnPair = (scoreVal: string | undefined, maxVal: string | undefined, defaultMax = 100) => {
+    if (scoreVal === undefined || maxVal === undefined) return { score: 0, max: 0 };
+    
+    const cleanScore = scoreVal.trim();
+    const cleanMax = maxVal.trim();
+    
+    if (
+      !cleanScore || 
+      !cleanMax || 
+      /n\/a/i.test(cleanScore) || 
+      /n\/a/i.test(cleanMax) || 
+      /no\s*attempt/i.test(cleanScore)
+    ) {
       return { score: 0, max: 0 }; // 0 max indicates Not attempted
     }
-    const match = clean.match(/^([\d.]+)\s*\/\s*([\d.]+)$/);
-    if (match) {
-      return {
-        score: parseFloat(match[1]) || 0,
-        max: parseFloat(match[2]) || defaultMax,
-      };
-    }
-    const num = parseFloat(clean);
-    if (!isNaN(num)) {
-      return { score: num, max: defaultMax };
-    }
-    return { score: 0, max: defaultMax };
+    
+    const scoreNum = parseFloat(cleanScore);
+    const maxNum = parseFloat(cleanMax);
+    
+    return {
+      score: isNaN(scoreNum) ? 0 : scoreNum,
+      max: isNaN(maxNum) ? defaultMax : maxNum,
+    };
   };
 
   return rows
     .filter((r) => r.length >= 4) // Ensure we at least have Scholar, Year, Email, and Week columns
     .map((r) => {
-      const mcq = parseFraction(r[4], 100);
-      const short = parseFraction(r[5], 100);
-      const long = parseFraction(r[6], 100);
+      const mcq = parseColumnPair(r[4], r[5], 100);
+      const short = parseColumnPair(r[6], r[7], 100);
+      const long = parseColumnPair(r[8], r[9], 100);
 
       return {
         scholar_name: String(r[0] || "").trim(),
