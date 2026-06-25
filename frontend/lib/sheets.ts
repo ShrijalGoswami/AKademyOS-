@@ -243,6 +243,98 @@ export async function fetchQuizSheet(): Promise<QuizSheetRow[]> {
       });
     }
   }
-  
+
   return quizRows;
+}
+
+// ─── Students directory (year level + GATE), used by /api/ask ─────────────────
+//
+// Reads the students roster sheet with the SAME server-side service-account
+// credentials as everything above (getAuth) — never the public link. Columns
+// are detected by header name (case-insensitive) so the exact sheet layout can
+// vary, matching how the offline-test reader auto-detects its columns.
+
+export interface StudentRecord {
+  email: string;
+  /** Raw year as written in the sheet, parsed to an integer (e.g. 3, 4, 6, 8) — NOT yet clamped to the agent's supported set. */
+  yearLevel: number | null;
+  isGate: boolean;
+}
+
+// Parse "Year 3" / "3" / "Grade 3" / "Y3" → 3. Returns null if no number present.
+export function parseYearLevel(raw: string | undefined | null): number | null {
+  if (raw == null) return null;
+  const m = String(raw).match(/\d+/);
+  if (!m) return null;
+  const n = parseInt(m[0], 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Interpret a gifted/GATE/scholar indicator cell as a boolean.
+function parseGateFlag(raw: string | undefined | null): boolean {
+  if (raw == null) return false;
+  const v = String(raw).trim().toLowerCase();
+  if (!v) return false;
+  return ["yes", "y", "true", "1", "gate", "gifted", "scholar", "✓", "x"].includes(v);
+}
+
+// Brief in-memory cache so we don't re-fetch the whole roster on every question.
+const STUDENTS_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let studentCache: { at: number; map: Map<string, StudentRecord> } | null = null;
+
+async function loadStudentDirectory(): Promise<Map<string, StudentRecord>> {
+  const spreadsheetId = process.env.GOOGLE_SHEETS_STUDENTS_SPREADSHEET_ID;
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_STUDENTS_SPREADSHEET_ID is not configured");
+  }
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  // Use the first tab, whatever it's called.
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const tab = meta.data.sheets?.[0]?.properties?.title;
+  if (!tab) return new Map();
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${tab}!A:Z`,
+  });
+  const rows = (res.data.values as string[][] | null | undefined) ?? [];
+  if (rows.length < 2) return new Map();
+
+  const headers = rows[0].map((h) => (h ?? "").toString().trim().toLowerCase());
+  const emailIdx = headers.findIndex((h) => h.includes("email"));
+  const yearIdx = headers.findIndex((h) => h.includes("year") || h.includes("grade"));
+  const gateIdx = headers.findIndex(
+    (h) => h.includes("gate") || h.includes("gifted") || h.includes("scholar")
+  );
+
+  const map = new Map<string, StudentRecord>();
+  if (emailIdx < 0) return map; // no email column → cannot key anything
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const email = row[emailIdx] ? String(row[emailIdx]).trim().toLowerCase() : "";
+    if (!email) continue;
+    map.set(email, {
+      email,
+      yearLevel: yearIdx >= 0 ? parseYearLevel(row[yearIdx]) : null,
+      isGate: gateIdx >= 0 ? parseGateFlag(row[gateIdx]) : false,
+    });
+  }
+  return map;
+}
+
+/**
+ * Look up a single student by email from the roster sheet, using a short-lived
+ * cached copy of the whole directory. Returns null if the email isn't present.
+ */
+export async function lookupStudent(email: string): Promise<StudentRecord | null> {
+  const now = Date.now();
+  if (!studentCache || now - studentCache.at > STUDENTS_TTL_MS) {
+    studentCache = { at: now, map: await loadStudentDirectory() };
+  }
+  return studentCache.map.get(email.trim().toLowerCase()) ?? null;
 }

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { lookupStudent } from "@/lib/sheets";
 
 /**
  * Secure server-side proxy for the Ask AK chat → external AI tutor agent.
@@ -25,6 +26,24 @@ const SUBJECT_MAP: Record<string, "maths" | "science" | "english"> = {
   Science: "science",
   English: "english",
 };
+
+// The agent only supports these year levels. Any other year (e.g. 4, 6, 9) is
+// mapped to the NEAREST supported year; ties resolve DOWN (iterating ascending
+// with a strict `<` keeps the lower year) so a child never gets content pitched
+// above their level. e.g. 4→3, 6→5, 2→3, 10→8.
+const SUPPORTED_YEARS = [3, 5, 7, 8] as const;
+function toSupportedYear(year: number): number {
+  let best: number = SUPPORTED_YEARS[0];
+  let bestDist = Infinity;
+  for (const y of SUPPORTED_YEARS) {
+    const d = Math.abs(y - year);
+    if (d < bestDist) {
+      bestDist = d;
+      best = y;
+    }
+  }
+  return best;
+}
 
 // Render's free tier can cold-start slowly — cap the wait so the request
 // can't hang forever (the client surfaces this as a friendly retry message).
@@ -54,11 +73,51 @@ export async function POST(req: NextRequest) {
   const subject =
     typeof body.subject === "string" ? SUBJECT_MAP[body.subject] ?? null : null;
 
-  // 3. TEMPORARY DEFAULTS.
-  // TODO: replace with real year/GATE from the students spreadsheet, matched by session email.
-  const year_level = 5;
-  const is_gate = false;
   const channel = "web";
+
+  // 3. Resolve the student's REAL year level + GATE flag, server-side, from the
+  //    roster sheet keyed by their authenticated email. The client is never
+  //    trusted for any of this.
+  const email = session.user?.email;
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let record;
+  try {
+    record = await lookupStudent(email);
+  } catch (err) {
+    // Sheet not configured / not reachable / not shared with the service
+    // account → transient system error, safe to retry. Never falls through
+    // to a default year.
+    console.error("[ask] student directory lookup failed:", err);
+    return NextResponse.json(
+      { error: "We couldn't check your year level just now. Please try again in a moment." },
+      { status: 503 }
+    );
+  }
+
+  const rawYear = record?.yearLevel ?? null;
+  if (!record || rawYear == null) {
+    // Email not in the roster, or year missing/unparseable. Do NOT silently
+    // default to a year — surface a friendly, visible message instead so the
+    // missing record gets noticed and fixed. (Logged for operators too.)
+    console.warn(
+      `[ask] no usable year level for ${email} (inRoster=${!!record}, rawYear=${rawYear})`
+    );
+    return NextResponse.json(
+      {
+        notice: true,
+        answer:
+          "I couldn't find your year level yet, so I can't tailor my answer safely. " +
+          "Please ask your teacher to add you to the student list — then I'll be ready to help! 🙌",
+      },
+      { status: 200 }
+    );
+  }
+
+  const year_level = toSupportedYear(rawYear); // clamp to the agent's {3,5,7,8}
+  const is_gate = record.isGate;
 
   // 4. Config — server-only env vars, never sent to the browser.
   const agentUrl = process.env.TUTOR_AGENT_URL;
