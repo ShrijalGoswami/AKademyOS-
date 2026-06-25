@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -9,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  LabelList,
 } from "recharts";
 import { OfflineTestChartData } from "@/types";
 
@@ -99,9 +101,31 @@ export function OfflineTestBarChart({ scores }: Props) {
     };
   });
 
+  const renderCustomizedLabel = useCallback((props: any) => {
+    const { x, y, width, index } = props;
+    const item = data[index];
+    if (!item) return null;
+
+    const text = item.hasData 
+      ? `${item.rawScore}/${item.maxScore} (${item.Score}%)` 
+      : "Not attempted";
+
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 10}
+        fill={item.hasData ? "var(--foreground)" : "var(--text-muted)"}
+        textAnchor="middle"
+        className={item.hasData ? "font-semibold text-[11px]" : "font-normal text-[10px] fill-text-muted"}
+      >
+        {text}
+      </text>
+    );
+  }, [data]);
+
   return (
     <ResponsiveContainer width="100%" height={320}>
-      <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 4 }} barCategoryGap="50%">
+      <BarChart data={data} margin={{ top: 28, right: 16, left: 0, bottom: 4 }} barCategoryGap="50%">
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
         <XAxis
           dataKey="week"
@@ -118,10 +142,11 @@ export function OfflineTestBarChart({ scores }: Props) {
           tickLine={false}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(20, 103, 5, 0.05)" }} />
-        <Bar dataKey="Score" fill="#0ec21aff" radius={[4, 4, 0, 0]}>
-          {data.map((d, i) => (
-            <Cell key={i} fill={d.hasData ? "#0ec21aff" : EMPTY_COLOR} />
+        <Bar dataKey="Score" radius={[4, 4, 0, 0]} minPointSize={8} isAnimationActive={false}>
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill="transparent" />
           ))}
+          <LabelList dataKey="Score" content={renderCustomizedLabel} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>

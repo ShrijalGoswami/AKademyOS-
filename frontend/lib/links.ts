@@ -18,23 +18,15 @@ export interface StudentLink {
  */
 export const STUDENT_LINKS: StudentLink[] = [
   {
-    key: "ai-agent",
-    label: "AI Agent",
-    description: "Ask the study assistant",
-    url: "/dashboard/student/ask-ak",
-    icon: Bot,
-    internal: true,
-  },
-  {
     key: "akademy-plus",
-    label: "Akademy+",
-    description: "Premium learning hub",
+    label: "AKademy+",
+    description: "Premium online video library",
     url: "https://akademyplus.vercel.app/login",
     icon: Sparkles,
   },
   {
     key: "eduquiz8",
-    label: "Eduquiz8",
+    label: "Educ8",
     description: "Practice quizzes",
     url: "https://educ8quizz.netlify.app/",
     icon: ListChecks,
@@ -42,8 +34,16 @@ export const STUDENT_LINKS: StudentLink[] = [
   {
     key: "homework",
     label: "Homework",
-    description: "Submit & review homework",
+    description: "Submit and review homework",
     url: "https://akademy38homework.netlify.app/",
     icon: BookOpen,
+  },
+  {
+    key: "ai-agent",
+    label: "A² (Ask AK)",
+    description: "24/7 Online Academic Mentor",
+    url: "/dashboard/student/ask-ak",
+    icon: Bot,
+    internal: true,
   },
 ];
