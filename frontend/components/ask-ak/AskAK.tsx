@@ -176,29 +176,27 @@ export default function AskAK() {
     <div style={styles.page}>
       <div style={styles.card}>
         {/* ---- Header ---- */}
+        {/* The logo image already contains the "Ask AK" wordmark + "Your
+            Academic Mentor" tagline, so we show ONLY the logo (no adjacent
+            text) to avoid the wording appearing twice. */}
         <header style={styles.header}>
           <div style={styles.logoWrap}>
-            {/* Logo served from /public/ask-ak-logo.jpeg */}
             <img
               src="/ask-ak-logo.jpeg"
-              alt="Ask AK logo"
-              width={44}
-              height={44}
+              alt="Ask AK — Your Academic Mentor"
               style={styles.logoImg}
               onError={(e) => {
-                // Graceful fallback until the real logo image is added.
+                // Fallback shown ONLY if the logo image fails to load, so the
+                // header isn't empty.
                 (e.currentTarget as HTMLImageElement).style.display = "none";
                 const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
                 if (sib) sib.style.display = "flex";
               }}
             />
-            <div style={{ ...styles.logoFallback, ...styles.mascot }}>A²</div>
-          </div>
-          <div style={styles.headerText}>
-            <h1 style={styles.title}>
-              Ask AK <span className="askak-wave" style={styles.wave}>👋</span>
-            </h1>
-            <p style={styles.tagline}>Your Academic Mentor</p>
+            <div style={styles.logoFallback}>
+              <span style={{ ...styles.mascot, ...styles.fallbackMascot }}>A²</span>
+              <span style={styles.fallbackText}>Ask AK</span>
+            </div>
           </div>
         </header>
 
@@ -403,7 +401,10 @@ function Dot({ color, delay = 0 }: { color: string; delay?: number }) {
 // ---- Styles --------------------------------------------------------------
 const styles: { [k: string]: React.CSSProperties } = {
   page: {
-    minHeight: "100vh",
+    // Fill the dashboard content area (parent is h-screen + overflow-y-auto,
+    // no Topbar on this page) so the chat uses the whole available height.
+    height: "100%",
+    minHeight: "100%",
     width: "100%",
     // Soft cream gradient + very light dot pattern — fun but stays readable.
     background: `
@@ -413,17 +414,20 @@ const styles: { [k: string]: React.CSSProperties } = {
       linear-gradient(160deg, ${COLORS.creamSoft} 0%, ${COLORS.cream} 100%)`,
     backgroundSize: "36px 36px, cover, cover, cover",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "16px",
+    alignItems: "stretch", // card stretches to fill the height...
+    justifyContent: "center", // ...while staying centred at its capped width
+    padding: "clamp(12px, 2.2vh, 28px)",
     boxSizing: "border-box",
     fontFamily:
       "'Nunito', 'Quicksand', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   },
   card: {
     width: "100%",
-    maxWidth: 580,
-    height: "min(90vh, 780px)",
+    // Noticeably wider than before (was 580) but capped so text lines stay
+    // comfortably readable for children.
+    maxWidth: 880,
+    height: "100%", // fill the stretched page area top-to-bottom
+    minHeight: 0, // let the inner chat area scroll instead of overflowing
     display: "flex",
     flexDirection: "column",
     background: COLORS.creamSoft,
@@ -440,16 +444,20 @@ const styles: { [k: string]: React.CSSProperties } = {
     background: `linear-gradient(135deg, ${COLORS.forest} 0%, ${COLORS.forestSoft} 100%)`,
     color: COLORS.white,
   },
-  logoWrap: { position: "relative", width: 44, height: 44, flexShrink: 0 },
+  logoWrap: { display: "flex", alignItems: "center", minWidth: 0, flexShrink: 1 },
   logoImg: {
-    width: 44,
-    height: 44,
+    // Sized by height so the full wordmark+tagline logo reads cleanly; width
+    // auto keeps its aspect ratio, maxWidth stops it overflowing on mobile.
+    height: 50,
+    width: "auto",
+    maxWidth: "min(72vw, 320px)",
     borderRadius: 14,
     objectFit: "contain",
     background: COLORS.creamSoft,
-    padding: 3,
+    padding: "4px 8px",
     boxSizing: "border-box",
     boxShadow: "0 0 0 2px rgba(255,255,255,0.4)",
+    display: "block",
   },
   mascot: {
     // Friendly mascot badge — soft glow + a cheerful pop/bounce on load.
@@ -458,22 +466,24 @@ const styles: { [k: string]: React.CSSProperties } = {
     boxShadow: `0 0 0 4px rgba(255,255,255,0.35), 0 6px 16px rgba(244,183,64,0.5)`,
     animation: "askak-pop 0.6s cubic-bezier(.2,1.3,.5,1) both",
   },
+  // Fallback (image-load failure only): a small A² mark + "Ask AK" wordmark.
   logoFallback: {
     display: "none",
-    position: "absolute",
-    inset: 0,
+    alignItems: "center",
+    gap: 12,
+  },
+  fallbackMascot: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    fontWeight: 900,
-    fontSize: 20,
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    fontWeight: 900,
+    fontSize: 20,
+    flexShrink: 0,
   },
-  headerText: { display: "flex", flexDirection: "column", lineHeight: 1.2 },
-  title: { margin: 0, fontSize: 25, fontWeight: 900, letterSpacing: 0.2 },
-  wave: { display: "inline-block" },
-  tagline: { margin: 0, fontSize: 14, opacity: 0.9, fontWeight: 600 },
+  fallbackText: { fontSize: 22, fontWeight: 900, letterSpacing: 0.3, color: COLORS.white },
   subjects: {
     display: "flex",
     gap: 10,
@@ -506,6 +516,7 @@ const styles: { [k: string]: React.CSSProperties } = {
   pillEmoji: { fontSize: 17, lineHeight: 1 },
   chat: {
     flex: 1,
+    minHeight: 0, // critical: lets this flex child scroll instead of growing the card
     overflowY: "auto",
     padding: "20px 16px",
     display: "flex",

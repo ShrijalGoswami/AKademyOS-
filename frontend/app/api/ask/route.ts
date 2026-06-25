@@ -129,8 +129,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Stable per-student id so follow-up questions thread together. Stays server-side.
-  const studentId = session.user?.id ?? session.user?.email ?? undefined;
+  // Traceability: store WHO asked. Use the authenticated email (validated
+  // non-null at step 3 — we 401'd otherwise) as the agent's `student_id`, and
+  // reuse it as the `conversation_id` so multi-turn memory stays tied to the
+  // same student. Derived entirely server-side; the client never sends identity.
+  const studentId = email;
 
   // 5. Call the agent with a hard timeout.
   const controller = new AbortController();
