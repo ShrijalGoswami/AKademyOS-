@@ -60,7 +60,7 @@ export function QuizBarChart({ scores }: Props) {
           tickLine={false}
         />
         <YAxis
-          domain={[0, 100]}
+          domain={[0, (dataMax: number) => Math.max(30, Math.ceil((dataMax || 0) / 10) * 10)]}
           tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}

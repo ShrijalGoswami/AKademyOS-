@@ -15,6 +15,7 @@ import { ImportLog, StudentSummary } from "@/types";
 
 interface HwRow {
   user_email: string;
+  published: boolean;
   mcq_score: number;
   short_answer_score: number;
   long_answer_score: number;
@@ -41,20 +42,24 @@ export default async function AdminDashboard() {
     emails.length
       ? supabase
           .from("homework_scores")
-          .select("user_email, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
+          .select("user_email, published, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
           .in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("offline_test_scores").select("user_email, week_number").in("user_email", emails)
+      ? supabase.from("offline_test_scores").select("user_email, published, week_number").in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("quiz_scores").select("user_email").in("user_email", emails)
+      ? supabase.from("quiz_scores").select("user_email, published").in("user_email", emails)
       : Promise.resolve({ data: [] }),
   ]);
 
   const hwRows = (hwRes.data ?? []) as HwRow[];
-  const otRows = (otRes.data ?? []) as { user_email: string; week_number: number }[];
-  const qzRows = (qzRes.data ?? []) as { user_email: string }[];
+  const otRows = (otRes.data ?? []) as { user_email: string; published: boolean; week_number: number }[];
+  const qzRows = (qzRes.data ?? []) as { user_email: string; published: boolean }[];
+
+  const isHwPublished = hwRows.length > 0 && hwRows.every((r) => r.published);
+  const isOtPublished = otRows.length > 0 && otRows.every((r) => r.published);
+  const isQzPublished = qzRows.length > 0 && qzRows.every((r) => r.published);
 
   const countBy = (arr: { user_email: string }[]) =>
     arr.reduce<Record<string, number>>((acc, r) => {
@@ -149,18 +154,21 @@ export default async function AdminDashboard() {
                 scoreType="homework"
                 lastImport={logs.find((l) => l.score_type === "homework")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.homework_count, 0)}
+                initialIsPublished={isHwPublished}
               />
               <ImportCard
                 title="Offline Tests"
                 scoreType="offline_test"
                 lastImport={logs.find((l) => l.score_type === "offline_test")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.offline_test_count, 0)}
+                initialIsPublished={isOtPublished}
               />
               <ImportCard
                 title="Quizzes"
                 scoreType="quiz"
                 lastImport={logs.find((l) => l.score_type === "quiz")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.quiz_count, 0)}
+                initialIsPublished={isQzPublished}
               />
             </div>
           </div>

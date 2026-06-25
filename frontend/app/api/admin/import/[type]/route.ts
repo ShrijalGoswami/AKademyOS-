@@ -25,23 +25,8 @@ export async function GET(
     const rows = await fetchRows(type);
     const validEmails = await getValidEmails(supabase);
 
-    // Name-Matching Fallback for Offline Tests with empty email column
-    if (type === "offline_test") {
-      const { data: profiles } = await supabase.from("profiles").select("email, full_name");
-      for (const r of rows as any) {
-        if (!r.email && r.scholar_name) {
-          const scholar = r.scholar_name.trim().toLowerCase();
-          const matches = (profiles ?? []).filter((p) => {
-            if (!p.full_name) return false;
-            const name = p.full_name.trim().toLowerCase();
-            return name === scholar || name.startsWith(scholar + " ") || name.includes(" " + scholar);
-          });
-          if (matches.length === 1) {
-            r.email = matches[0].email;
-          }
-        }
-      }
-    }
+    // Name-Matching & Username Fallbacks
+    await resolveEmails(rows, type, supabase, validEmails);
 
     const invalidEmails = rows
       .map((r) => r.email)
@@ -75,23 +60,8 @@ export async function POST(
     rows = await fetchRows(type);
     const validEmails = await getValidEmails(supabase);
 
-    // Name-Matching Fallback for Offline Tests with empty email column
-    if (type === "offline_test") {
-      const { data: profiles } = await supabase.from("profiles").select("email, full_name");
-      for (const r of rows as any) {
-        if (!r.email && r.scholar_name) {
-          const scholar = r.scholar_name.trim().toLowerCase();
-          const matches = (profiles ?? []).filter((p) => {
-            if (!p.full_name) return false;
-            const name = p.full_name.trim().toLowerCase();
-            return name === scholar || name.startsWith(scholar + " ") || name.includes(" " + scholar);
-          });
-          if (matches.length === 1) {
-            r.email = matches[0].email;
-          }
-        }
-      }
-    }
+    // Name-Matching & Username Fallbacks
+    await resolveEmails(rows, type, supabase, validEmails);
 
     const validRows = rows.filter((r) => validEmails.has(r.email));
     rowsFailed = rows.length - validRows.length;
@@ -101,7 +71,7 @@ export async function POST(
       
       // Deduplicate upsertData to avoid PostgreSQL "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
       const uniqueDataMap = new Map<string, any>();
-      for (const row of upsertData) {
+      for (const row of upsertData as any[]) {
         const key = type === "quiz"
           ? `${row.user_email}_${row.week_number}_${row.quiz_title}`
           : type === "offline_test"
@@ -220,4 +190,43 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
     published: false,
     updated_at: new Date().toISOString(),
   }));
+}
+
+async function resolveEmails(
+  rows: any[],
+  type: ScoreType,
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  validEmails: Set<string>
+) {
+  const { data: profiles } = await supabase.from("profiles").select("email, full_name");
+  const profileList = profiles ?? [];
+
+  for (const r of rows) {
+    let emailVal = r.email ? String(r.email).trim().toLowerCase() : "";
+
+    // 1. If email doesn't contain "@", check if it matches a prefix of an existing profile email
+    if (emailVal && !emailVal.includes("@")) {
+      const prefixMatch = profileList.filter((p) => {
+        const pEmail = String(p.email || "").trim().toLowerCase();
+        return pEmail.startsWith(emailVal + "@");
+      });
+      if (prefixMatch.length === 1) {
+        emailVal = prefixMatch[0].email;
+        r.email = emailVal;
+      }
+    }
+
+    // 2. If email is empty or still invalid, and we have a scholar_name, do name-matching fallback
+    if ((!emailVal || !validEmails.has(emailVal)) && r.scholar_name) {
+      const scholar = r.scholar_name.trim().toLowerCase();
+      const matches = profileList.filter((p) => {
+        if (!p.full_name) return false;
+        const name = p.full_name.trim().toLowerCase();
+        return name === scholar || name.startsWith(scholar + " ") || name.includes(" " + scholar);
+      });
+      if (matches.length === 1) {
+        r.email = matches[0].email;
+      }
+    }
+  }
 }

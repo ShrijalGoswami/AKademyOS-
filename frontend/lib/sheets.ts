@@ -25,20 +25,48 @@ async function readSheet(spreadsheetId: string, range: string): Promise<string[]
 export async function fetchHomeworkSheet(): Promise<HomeworkSheetRow[]> {
   const rows = await readSheet(
     process.env.GOOGLE_SHEETS_HOMEWORK_SPREADSHEET_ID!,
-    "Sheet1!A:H"
+    "Sheet1!A:G"
   );
+
+  const parseFraction = (val: string | undefined, defaultMax = 100) => {
+    if (!val) return { score: 0, max: defaultMax };
+    const clean = val.trim();
+    if (!clean || /n\/a/i.test(clean) || /no\s*attempt/i.test(clean)) {
+      return { score: 0, max: 0 }; // 0 max indicates Not attempted
+    }
+    const match = clean.match(/^([\d.]+)\s*\/\s*([\d.]+)$/);
+    if (match) {
+      return {
+        score: parseFloat(match[1]) || 0,
+        max: parseFloat(match[2]) || defaultMax,
+      };
+    }
+    const num = parseFloat(clean);
+    if (!isNaN(num)) {
+      return { score: num, max: defaultMax };
+    }
+    return { score: 0, max: defaultMax };
+  };
+
   return rows
-    .filter((r) => r.length >= 8)
-    .map((r) => ({
-      email: String(r[0]).trim().toLowerCase(),
-      week: parseInt(r[1], 10),
-      mcq_score: parseFloat(r[2]) || 0,
-      mcq_max: parseFloat(r[3]) || 100,
-      short_answer_score: parseFloat(r[4]) || 0,
-      short_answer_max: parseFloat(r[5]) || 100,
-      long_answer_score: parseFloat(r[6]) || 0,
-      long_answer_max: parseFloat(r[7]) || 100,
-    }));
+    .filter((r) => r.length >= 4) // Ensure we at least have Scholar, Year, Email, and Week columns
+    .map((r) => {
+      const mcq = parseFraction(r[4], 100);
+      const short = parseFraction(r[5], 100);
+      const long = parseFraction(r[6], 100);
+
+      return {
+        scholar_name: String(r[0] || "").trim(),
+        email: String(r[2] || "").trim().toLowerCase(),
+        week: parseInt(String(r[3] || "").replace(/\D/g, ""), 10) || 1,
+        mcq_score: mcq.score,
+        mcq_max: mcq.max,
+        short_answer_score: short.score,
+        short_answer_max: short.max,
+        long_answer_score: long.score,
+        long_answer_max: long.max,
+      };
+    });
 }
 
 export async function fetchOfflineTestSheet(): Promise<OfflineTestSheetRow[]> {

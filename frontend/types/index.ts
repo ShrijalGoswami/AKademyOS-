@@ -120,6 +120,7 @@ export interface HomeworkSheetRow {
   short_answer_max: number;
   long_answer_score: number;
   long_answer_max: number;
+  scholar_name?: string;
 }
 
 export interface OfflineTestSheetRow {
