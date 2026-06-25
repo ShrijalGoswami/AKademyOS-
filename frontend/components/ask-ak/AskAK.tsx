@@ -1,6 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 /**
  * Ask AK — AI Tutor chat UI (A² · "Your Academic Mentor")
@@ -54,6 +59,36 @@ interface Message {
 
 let messageId = 1;
 
+/**
+ * remark-math only renders `$$…$$` as centered *display* math when the `$$`
+ * delimiters sit on their own lines; a one-liner `$$\frac{1}{4}$$` (which the
+ * tutor commonly emits) is otherwise treated as inline. Normalise those onto
+ * their own lines so block equations display properly. Inline `$…$` untouched.
+ */
+function normalizeBlockMath(text: string): string {
+  return text.replace(/\$\$([\s\S]+?)\$\$/g, (_m, inner) => `\n\n$$\n${inner.trim()}\n$$\n\n`);
+}
+
+/**
+ * Renders an assistant message as Markdown + math.
+ * - remark-gfm  → tables, lists, strikethrough, autolinks
+ * - remark-math + rehype-katex → $inline$ and $$block$$ LaTeX (KaTeX)
+ * Styling lives in the `.askak-md` rules in the <style> block below so it
+ * stays inside the cream/green chat bubble and never overflows on mobile.
+ */
+function MarkdownMessage({ text }: { text: string }) {
+  return (
+    <div className="askak-md">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+      >
+        {normalizeBlockMath(text)}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 export default function AskAK() {
   const [subject, setSubject] = useState<Subject>("Maths");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -70,30 +105,28 @@ export default function AskAK() {
   }, [messages, isTyping]);
 
   /**
-   * Fetch a tutor reply. Right now this returns a MOCK answer after ~1s.
+   * Fetch a tutor reply from the secure server-side proxy (/api/ask).
    *
-   * To go live, replace the body of this function with a real request, e.g.:
+   * We send ONLY { subject, question }. The route derives identity, year level,
+   * GATE flag and channel server-side, and the service key never reaches here.
    *
-   *   const res = await fetch("/api/ask", {
-   *     method: "POST",
-   *     headers: { "Content-Type": "application/json" },
-   *     body: JSON.stringify({ subject, question }),
-   *   });
-   *   const data = await res.json();
-   *   return data.answer;
-   *
-   * The selected `subject` is already passed in, ready to send to the agent.
+   * Returns the answer text on success. A rate-limited response comes back as a
+   * friendly 200 message (shown as a normal bubble). Hard failures throw, and
+   * `sendText` renders them as a friendly error bubble.
    */
   async function getTutorReply(question: string, currentSubject: Subject): Promise<string> {
-    // TODO: call agent /ask here  ← swap the mock below for the real fetch.
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return (
-      `This is a sample answer. The tutor will be connected soon.\n\n` +
-      `You asked about ${currentSubject}:\n"${question}"\n\n` +
-      `Step 1: Read the question carefully.\n` +
-      `Step 2: I'll show step-by-step working here.\n` +
-      `Step 3: Then a clear final answer!`
-    );
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject: currentSubject, question }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error ?? "Something went wrong reaching AK.");
+    }
+    // Both normal answers and rate-limit messages arrive as `answer` (HTTP 200).
+    return data.answer ?? "Sorry, I couldn't come up with an answer just now.";
   }
 
   async function sendText(raw: string) {
@@ -105,10 +138,19 @@ export default function AskAK() {
     setInput("");
     setIsTyping(true);
 
-    const reply = await getTutorReply(text, subject);
-
-    setIsTyping(false);
-    setMessages((prev) => [...prev, { id: messageId++, sender: "ak", text: reply }]);
+    try {
+      const reply = await getTutorReply(text, subject);
+      setMessages((prev) => [...prev, { id: messageId++, sender: "ak", text: reply }]);
+    } catch (err) {
+      // Friendly error bubble — never leave the chat stuck on the typing dots.
+      const msg = err instanceof Error ? err.message : "Network error.";
+      setMessages((prev) => [
+        ...prev,
+        { id: messageId++, sender: "ak", text: `⚠️ ${msg}\nPlease try again in a moment.` },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   }
 
   function handleSend() {
@@ -217,7 +259,9 @@ export default function AskAK() {
             m.sender === "ak" ? (
               <div key={m.id} style={styles.rowAk}>
                 <div style={styles.avatar}>A²</div>
-                <div style={styles.bubbleAk}>{m.text}</div>
+                <div style={styles.bubbleAk}>
+                  <MarkdownMessage text={m.text} />
+                </div>
               </div>
             ) : (
               <div key={m.id} style={styles.rowStudent}>
@@ -293,6 +337,49 @@ export default function AskAK() {
         .askak-send:not(:disabled):hover { transform: scale(1.1) rotate(6deg);
           box-shadow: 0 6px 16px rgba(26,77,58,0.35); }
         .askak-send:not(:disabled):active { transform: scale(0.95); }
+
+        /* ---- Markdown answer styling (assistant bubbles only) ---- */
+        .askak-md { font-size: 15.5px; line-height: 1.6; color: ${COLORS.textDark};
+          word-break: break-word; overflow-wrap: anywhere; }
+        .askak-md > :first-child { margin-top: 0; }
+        .askak-md > :last-child { margin-bottom: 0; }
+        .askak-md p { margin: 0 0 10px; }
+        .askak-md h1, .askak-md h2, .askak-md h3, .askak-md h4 {
+          color: ${COLORS.forest}; font-weight: 900; line-height: 1.3; margin: 14px 0 8px; }
+        .askak-md h1 { font-size: 19px; }
+        .askak-md h2 { font-size: 17.5px; }
+        .askak-md h3 { font-size: 16px; }
+        .askak-md h4 { font-size: 15px; }
+        .askak-md ul, .askak-md ol { margin: 6px 0 10px; padding-left: 22px; }
+        .askak-md li { margin: 3px 0; }
+        .askak-md li::marker { color: ${COLORS.forestSoft}; }
+        .askak-md strong { font-weight: 800; color: ${COLORS.forest}; }
+        .askak-md em { font-style: italic; }
+        .askak-md a { color: ${COLORS.teal}; text-decoration: underline; font-weight: 700; }
+        .askak-md blockquote { margin: 8px 0; padding: 4px 12px;
+          border-left: 4px solid ${COLORS.gold}; background: ${COLORS.goldSoft};
+          border-radius: 8px; }
+        .askak-md hr { border: none; border-top: 1px solid ${COLORS.border}; margin: 12px 0; }
+        .askak-md code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          font-size: 0.88em; background: ${COLORS.forestTint}; color: ${COLORS.forest};
+          padding: 1px 6px; border-radius: 6px; }
+        .askak-md pre { background: ${COLORS.forestTint}; border: 1px solid ${COLORS.border};
+          border-radius: 12px; padding: 12px 14px; margin: 8px 0;
+          overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .askak-md pre code { background: none; padding: 0; color: ${COLORS.textDark}; font-size: 13.5px; }
+        /* Wide tables scroll horizontally inside the bubble on narrow screens */
+        .askak-md table { display: block; max-width: 100%; width: max-content; min-width: 60%;
+          overflow-x: auto; -webkit-overflow-scrolling: touch; border-collapse: collapse;
+          margin: 8px 0; font-size: 14px; }
+        .askak-md th, .askak-md td { border: 1px solid ${COLORS.border}; padding: 7px 11px;
+          text-align: left; white-space: nowrap; }
+        .askak-md th { background: ${COLORS.forestTint}; color: ${COLORS.forest}; font-weight: 800; }
+        .askak-md tr:nth-child(even) td { background: ${COLORS.creamSoft}; }
+        .askak-md img { max-width: 100%; height: auto; border-radius: 8px; }
+        /* KaTeX math — block equations scroll instead of overflowing */
+        .askak-md .katex { font-size: 1.04em; }
+        .askak-md .katex-display { margin: 10px 0; padding: 4px 2px;
+          overflow-x: auto; overflow-y: hidden; }
       `}</style>
     </div>
   );
@@ -505,8 +592,11 @@ const styles: { [k: string]: React.CSSProperties } = {
     padding: "12px 16px",
     fontSize: 15.5,
     lineHeight: 1.55,
-    whiteSpace: "pre-wrap", // preserve line breaks in step-by-step answers
+    // Content is Markdown (block elements); flow + wrapping handled by `.askak-md`.
     wordBreak: "break-word",
+    overflowWrap: "anywhere",
+    maxWidth: "100%",
+    minWidth: 0,
     boxShadow: "0 4px 14px rgba(26,77,58,0.08)",
   },
   bubbleStudent: {
