@@ -1,4 +1,5 @@
 import { Bell, Search } from "lucide-react";
+import { SidebarToggle } from "@/components/layout/SidebarToggle";
 
 interface Props {
   title: string;
@@ -7,10 +8,13 @@ interface Props {
 
 export function Topbar({ title, subtitle }: Props) {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-border bg-surface/80 px-6 py-4 backdrop-blur">
-      <div className="min-w-0">
-        <h1 className="font-heading text-xl font-bold text-text-primary">{title}</h1>
-        {subtitle ? <p className="truncate text-sm text-text-secondary">{subtitle}</p> : null}
+    <header className="flex items-center justify-between gap-4 border-b border-border bg-surface/80 px-4 py-4 backdrop-blur sm:px-6">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarToggle />
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl font-bold text-text-primary">{title}</h1>
+          {subtitle ? <p className="truncate text-sm text-text-secondary">{subtitle}</p> : null}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

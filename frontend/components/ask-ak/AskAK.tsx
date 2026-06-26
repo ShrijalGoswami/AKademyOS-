@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { SidebarToggle } from "@/components/layout/SidebarToggle";
 
 /**
  * Ask AK — AI Tutor chat UI (A² · "Your Academic Mentor")
@@ -174,6 +175,10 @@ export default function AskAK() {
 
   return (
     <div style={styles.page}>
+      {/* Mobile-only menu button to open the dashboard sidebar drawer */}
+      <div className="fixed left-3 top-3 z-30 md:hidden">
+        <SidebarToggle />
+      </div>
       <div style={styles.card}>
         {/* ---- Header ---- */}
         {/* The logo image already contains the "Ask AK" wordmark + "Your

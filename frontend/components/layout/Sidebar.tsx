@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/layout/SidebarContext";
 import type { UserRole } from "@/types";
 
 interface NavItem {
@@ -51,6 +52,7 @@ interface Props {
 
 export function Sidebar({ name, email, image, role }: Props) {
   const pathname = usePathname();
+  const { open, setOpen } = useSidebar();
   const items = NAV[role === "admin" ? "admin" : "student"];
   const initials = name
     ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -59,7 +61,23 @@ export function Sidebar({ name, email, image, role }: Props) {
     : "ST";
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col bg-[#09261E] text-white/90">
+    <>
+      {/* Mobile backdrop */}
+      <div
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+        className={cn(
+          "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      />
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-[#09261E] text-white/90 transition-transform duration-300 ease-in-out md:static md:z-auto md:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
@@ -98,6 +116,7 @@ export function Sidebar({ name, email, image, role }: Props) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setOpen(false)}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 active
@@ -127,6 +146,7 @@ export function Sidebar({ name, email, image, role }: Props) {
           Sign Out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
