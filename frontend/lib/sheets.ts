@@ -168,7 +168,13 @@ export async function fetchOfflineTestSheet(): Promise<OfflineTestSheetRow[]> {
       // Extract week number
       let week = 1;
       if (weekIdx >= 0 && r[weekIdx]) {
-        week = parseInt(String(r[weekIdx]).replace(/\D/g, ""), 10) || 1;
+        const weekStr = String(r[weekIdx]);
+        const match = weekStr.match(/Week\s*(\d+)/i);
+        if (match) {
+          week = parseInt(match[1], 10);
+        } else {
+          week = parseInt(weekStr.replace(/\D/g, ""), 10) || 1;
+        }
       }
 
       // Extract scores for each subject/topic column
@@ -226,11 +232,15 @@ export async function fetchQuizSheet(): Promise<QuizSheetRow[]> {
       // 3. Else fallback to Year column (index 2)
       let week = 1;
       if (r.length >= 11 && r[10]) {
-        week = parseInt(String(r[10]).replace(/\D/g, ""), 10) || 1;
+        const weekStr = String(r[10]);
+        const match = weekStr.match(/Week\s*(\d+)/i);
+        if (match) {
+          week = parseInt(match[1], 10);
+        } else {
+          week = parseInt(weekStr.replace(/\D/g, ""), 10) || 1;
+        }
       } else if (currentWeek !== null) {
         week = currentWeek;
-      } else {
-        week = parseInt(String(r[2]).replace(/\D/g, ""), 10) || 1;
       }
         
       quizRows.push({
