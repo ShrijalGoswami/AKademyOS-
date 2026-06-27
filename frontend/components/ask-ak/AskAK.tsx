@@ -233,16 +233,6 @@ export default function AskAK() {
         <div ref={scrollRef} style={styles.chat}>
           {/* Friendly welcome / empty-state */}
           <div style={styles.welcome}>
-            {logoFailed ? (
-              <div style={{ ...styles.mascot, ...styles.welcomeMascot }}>A²</div>
-            ) : (
-              <img
-                src="/ask-ak-logo.jpeg"
-                alt="Ask AK logo"
-                style={styles.welcomeLogo}
-                onError={() => setLogoFailed(true)}
-              />
-            )}
             <h2 style={styles.welcomeHeading}>
               Meet A² 👋 , Your 24/7 AKademy38 Academic Mentor
             </h2>
