@@ -1,4 +1,4 @@
-import { Bot, Sparkles, ListChecks, BookOpen, type LucideIcon } from "lucide-react";
+import { Monitor, Sparkles, ListChecks, BookOpen, type LucideIcon } from "lucide-react";
 
 export interface StudentLink {
   key: string;
@@ -43,7 +43,7 @@ export const STUDENT_LINKS: StudentLink[] = [
     label: "A² (Ask AK)",
     description: "24/7 Online Academic Mentor",
     url: "/dashboard/student/ask-ak",
-    icon: Bot,
+    icon: Monitor,
     internal: true,
   },
 ];

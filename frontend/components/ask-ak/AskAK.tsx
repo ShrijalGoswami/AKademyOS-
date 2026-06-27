@@ -95,6 +95,7 @@ export default function AskAK() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -232,13 +233,22 @@ export default function AskAK() {
         <div ref={scrollRef} style={styles.chat}>
           {/* Friendly welcome / empty-state */}
           <div style={styles.welcome}>
-            <div style={{ ...styles.mascot, ...styles.welcomeMascot }}>A²</div>
+            {logoFailed ? (
+              <div style={{ ...styles.mascot, ...styles.welcomeMascot }}>A²</div>
+            ) : (
+              <img
+                src="/ask-ak-logo.jpeg"
+                alt="Ask AK logo"
+                style={styles.welcomeLogo}
+                onError={() => setLogoFailed(true)}
+              />
+            )}
             <h2 style={styles.welcomeHeading}>
-              Meet A² 👋 — Your 24/7 AKademy38 Academic Mentor!
+              Meet A² 👋 , Your 24/7 AKademy38 Academic Mentor
             </h2>
             <p style={styles.welcomeSub}>
-              Pick a subject and ask me anything in Maths, Science, or English — I&apos;m
-              always here to help!
+              Pick a subject and ask me anything in Maths, Science, or English - I&apos;m
+              always here to help.
             </p>
 
             {isEmpty && (
@@ -539,12 +549,21 @@ const styles: { [k: string]: React.CSSProperties } = {
   welcomeMascot: {
     width: 64,
     height: 64,
-    borderRadius: "50%",
+    borderRadius: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: 26,
     fontWeight: 900,
+  },
+  welcomeLogo: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    objectFit: "contain",
+    backgroundColor: "#ffffff",
+    boxShadow: `0 0 0 4px rgba(255,255,255,0.35), 0 6px 16px rgba(244,183,64,0.5)`,
+    animation: "askak-pop 0.6s cubic-bezier(.2,1.3,.5,1) both",
   },
   welcomeHeading: {
     margin: "4px 0 0",
