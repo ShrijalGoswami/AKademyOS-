@@ -51,6 +51,7 @@ export default async function AdminStudentDetail({
     mcqMax: s.mcq_max,
     shortMax: s.short_answer_max,
     longMax: s.long_answer_max,
+    subject: s.subject,
   }));
 
   const offlineTestChartData: OfflineTestChartData[] = offlineTests.map((s) => ({
