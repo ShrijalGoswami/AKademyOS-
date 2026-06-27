@@ -216,17 +216,6 @@ async function resolveEmails(
       }
     }
 
-    // 2. If email is empty or still invalid, and we have a scholar_name, do name-matching fallback
-    if ((!emailVal || !validEmails.has(emailVal)) && r.scholar_name) {
-      const scholar = r.scholar_name.trim().toLowerCase();
-      const matches = profileList.filter((p) => {
-        if (!p.full_name) return false;
-        const name = p.full_name.trim().toLowerCase();
-        return name === scholar || name.startsWith(scholar + " ") || name.includes(" " + scholar);
-      });
-      if (matches.length === 1) {
-        r.email = matches[0].email;
-      }
-    }
+    // 2. Name-matching fallback removed per user request (relying entirely on direct email checking)
   }
 }
