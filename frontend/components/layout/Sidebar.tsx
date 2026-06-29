@@ -11,6 +11,7 @@ import {
   LinkIcon,
   LineChart,
   LogOut,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const NAV: Record<"student" | "admin", NavItem[]> = {
     { label: "Dashboard", href: "/dashboard/student", icon: LayoutDashboard },
     { label: "My Scores", href: "/dashboard/student#scores", icon: LineChart },
     { label: "Quick Links", href: "/dashboard/student#quick-links", icon: LinkIcon },
+    { label: "Resources", href: "/dashboard/student/resources", icon: FolderOpen },
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },

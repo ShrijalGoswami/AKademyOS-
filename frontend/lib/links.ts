@@ -1,4 +1,4 @@
-import { Monitor, Sparkles, ListChecks, BookOpen, type LucideIcon } from "lucide-react";
+import { Monitor, Sparkles, ListChecks, BookOpen, FolderOpen, type LucideIcon } from "lucide-react";
 
 export interface StudentLink {
   key: string;
@@ -37,6 +37,14 @@ export const STUDENT_LINKS: StudentLink[] = [
     description: "Submit and review homework",
     url: "https://akademy38homework.netlify.app/",
     icon: BookOpen,
+  },
+  {
+    key: "resources",
+    label: "Resources",
+    description: "Access study materials and resources",
+    url: "/dashboard/student/resources",
+    icon: FolderOpen,
+    internal: true,
   },
   {
     key: "ai-agent",
