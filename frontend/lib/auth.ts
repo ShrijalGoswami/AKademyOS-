@@ -49,9 +49,22 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role;
-        session.user.id = token.userId;
+      if (session.user && token.email) {
+        const supabase = getAdminClient();
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, role, full_name")
+          .eq("email", token.email)
+          .single();
+
+        if (!data) {
+          // If the profile is not found in the database, invalidate the session
+          return null as any;
+        }
+
+        session.user.role = data.role as "student" | "admin" | "teacher" | "parent";
+        session.user.id = data.id;
+        session.user.name = data.full_name || session.user.name;
       }
       return session;
     },

@@ -73,11 +73,11 @@ export default async function StudentDashboard() {
     ? Math.round(trend.reduce((a, t) => a + t.percent, 0) / trend.length)
     : 0;
 
-  const firstName = session.user.name?.split(" ")[0] ?? "there";
+  const fullName = session.user.name ?? "there";
 
   return (
     <>
-      <Topbar title="Student Dashboard" subtitle={`Good to see you, ${firstName} 👋`} />
+      <Topbar title="Student Dashboard" subtitle={`Good to see you, ${fullName} 👋`} />
 
       <div className="space-y-8 p-6">
         {/* Stat cards */}
