@@ -76,6 +76,8 @@ export async function POST(
           ? `${row.user_email}_${row.week_number}_${row.quiz_title}`
           : type === "offline_test"
           ? `${row.user_email}_${row.week_number}_${row.subject}_${row.topic}`
+          : type === "homework"
+          ? `${row.user_email}_${row.week_number}_${row.subject}`
           : `${row.user_email}_${row.week_number}`;
         uniqueDataMap.set(key, row);
       }
@@ -88,6 +90,8 @@ export async function POST(
             ? "user_email,week_number,quiz_title" 
             : type === "offline_test"
             ? "user_email,week_number,subject,topic"
+            : type === "homework"
+            ? "user_email,week_number,subject"
             : "user_email,week_number",
       });
       if (error) {
@@ -158,6 +162,7 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
     return rows.map((r) => ({
       user_email: r.email,
       week_number: r.week,
+      subject: r.subject,
       mcq_score: r.mcq_score,
       mcq_max: r.mcq_max,
       short_answer_score: r.short_answer_score,

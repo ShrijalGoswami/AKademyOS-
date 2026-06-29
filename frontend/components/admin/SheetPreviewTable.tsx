@@ -46,6 +46,7 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
               <TableHead>Week</TableHead>
               {type === "homework" && (
                 <>
+                  <TableHead>Subject</TableHead>
                   <TableHead>MCQ</TableHead>
                   <TableHead>Short Ans</TableHead>
                   <TableHead>Long Ans</TableHead>
@@ -84,6 +85,9 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
                     const r = row as HomeworkSheetRow;
                     return (
                       <>
+                        <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">
+                          {r.subject}
+                        </TableCell>
                         <TableCell>{r.mcq_score}/{r.mcq_max}</TableCell>
                         <TableCell>{r.short_answer_score}/{r.short_answer_max}</TableCell>
                         <TableCell>{r.long_answer_score}/{r.long_answer_max}</TableCell>

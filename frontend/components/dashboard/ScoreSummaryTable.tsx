@@ -26,6 +26,7 @@ export function ScoreSummaryTable({ activeTab, homework, offlineTests, quizzes }
         <TableHeader>
           <TableRow>
             <TableHead>Week</TableHead>
+            <TableHead>Subject</TableHead>
             <TableHead>MCQ</TableHead>
             <TableHead>Short Answer</TableHead>
             <TableHead>Long Answer</TableHead>
@@ -35,7 +36,7 @@ export function ScoreSummaryTable({ activeTab, homework, offlineTests, quizzes }
         <TableBody>
           {homework.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-text-muted py-8">
+              <TableCell colSpan={6} className="text-center text-text-muted py-8">
                 No homework scores published yet.
               </TableCell>
             </TableRow>
@@ -46,6 +47,9 @@ export function ScoreSummaryTable({ activeTab, homework, offlineTests, quizzes }
               return (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium text-text-primary">Week {s.week_number}</TableCell>
+                  <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">
+                    {s.subject ?? "—"}
+                  </TableCell>
                   <TableCell className={cn(getScoreColor(s.mcq_score, s.mcq_max))}>
                     {formatScore(s.mcq_score, s.mcq_max)}
                   </TableCell>

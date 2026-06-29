@@ -25,7 +25,7 @@ async function readSheet(spreadsheetId: string, range: string): Promise<string[]
 export async function fetchHomeworkSheet(): Promise<HomeworkSheetRow[]> {
   const rows = await readSheet(
     process.env.GOOGLE_SHEETS_HOMEWORK_SPREADSHEET_ID!,
-    "Sheet1!A:J"
+    "Sheet1!A:K"
   );
 
   const parseColumnPair = (scoreVal: string | undefined, maxVal: string | undefined, defaultMax = 100) => {
@@ -54,16 +54,17 @@ export async function fetchHomeworkSheet(): Promise<HomeworkSheetRow[]> {
   };
 
   return rows
-    .filter((r) => r.length >= 4) // Ensure we at least have Scholar, Year, Email, and Week columns
+    .filter((r) => r.length >= 5) // Ensure we have Scholar, Year Group, Subject, Email, and Week columns
     .map((r) => {
-      const mcq = parseColumnPair(r[4], r[5], 100);
-      const short = parseColumnPair(r[6], r[7], 100);
-      const long = parseColumnPair(r[8], r[9], 100);
+      const mcq = parseColumnPair(r[5], r[6], 100);
+      const short = parseColumnPair(r[7], r[8], 100);
+      const long = parseColumnPair(r[9], r[10], 100);
 
       return {
         scholar_name: String(r[0] || "").trim(),
-        email: String(r[2] || "").trim().toLowerCase(),
-        week: parseInt(String(r[3] || "").replace(/\D/g, ""), 10) || 1,
+        subject: String(r[2] || "").trim(),
+        email: String(r[3] || "").trim().toLowerCase(),
+        week: parseInt(String(r[4] || "").replace(/\D/g, ""), 10) || 1,
         mcq_score: mcq.score,
         mcq_max: mcq.max,
         short_answer_score: short.score,

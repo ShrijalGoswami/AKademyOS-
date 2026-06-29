@@ -16,6 +16,7 @@ import { ImportLog, StudentSummary } from "@/types";
 interface HwRow {
   user_email: string;
   published: boolean;
+  subject: string | null;
   mcq_score: number;
   short_answer_score: number;
   long_answer_score: number;
@@ -42,7 +43,7 @@ export default async function AdminDashboard() {
     emails.length
       ? supabase
           .from("homework_scores")
-          .select("user_email, published, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
+          .select("user_email, published, subject, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
           .in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
