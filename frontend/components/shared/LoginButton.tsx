@@ -8,10 +8,6 @@ export function LoginButton() {
     <Button
       size="lg"
       onClick={() => {
-        // Mark this browser-tab session as logged in. sessionStorage is
-        // cleared when the tab is closed, which is how SessionGuard detects
-        // a reopened tab and ends the stale auth cookie session.
-        sessionStorage.setItem("isLoggedIn", "true");
         signIn("google", { callbackUrl: "/dashboard/student" });
       }}
       className="gap-3 text-base font-semibold px-8 py-3 h-auto"
