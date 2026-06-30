@@ -49,9 +49,30 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role;
-        session.user.id = token.userId;
+      if (session.user && token.email) {
+        console.log("[NextAuth Session Callback] Checking session for email:", token.email);
+        const supabase = getAdminClient();
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, role, full_name")
+          .ilike("email", token.email)
+          .single();
+
+        if (error) {
+          console.error("[NextAuth Session Callback] Database error or profile not found:", error.message);
+        }
+
+        if (!data) {
+          console.warn("[NextAuth Session Callback] Invalidating session because profile was not found.");
+          return null as any;
+        }
+
+        console.log("[NextAuth Session Callback] Profile found. Role:", data.role, "Name:", data.full_name);
+        session.user.role = data.role as "student" | "admin" | "teacher" | "parent";
+        session.user.id = data.id;
+        session.user.name = data.full_name || session.user.name;
+      } else {
+        console.warn("[NextAuth Session Callback] Missing session.user or token.email. User:", !!session.user, "Email:", token.email);
       }
       return session;
     },

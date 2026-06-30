@@ -24,7 +24,7 @@ export async function GET() {
       ? supabase.from("homework_scores").select("user_email").in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("offline_test_scores").select("user_email").in("user_email", emails)
+      ? supabase.from("offline_test_scores").select("user_email, week_number").in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
       ? supabase.from("quiz_scores").select("user_email").in("user_email", emails)
@@ -38,8 +38,21 @@ export async function GET() {
     }, {});
 
   const hwMap = countMap((hwRes.data ?? []) as { user_email: string }[]);
-  const otMap = countMap((otRes.data ?? []) as { user_email: string }[]);
   const qzMap = countMap((qzRes.data ?? []) as { user_email: string }[]);
+
+  // Count unique weeks for offline tests
+  const otData = (otRes.data ?? []) as { user_email: string; week_number: number }[];
+  const otMap: Record<string, number> = {};
+  const otUniqueWeeks: Record<string, Set<number>> = {};
+  for (const r of otData) {
+    if (!otUniqueWeeks[r.user_email]) {
+      otUniqueWeeks[r.user_email] = new Set();
+    }
+    otUniqueWeeks[r.user_email].add(r.week_number);
+  }
+  for (const email of Object.keys(otUniqueWeeks)) {
+    otMap[email] = otUniqueWeeks[email].size;
+  }
 
   const students = (profiles ?? []).map((p) => ({
     id: p.id,

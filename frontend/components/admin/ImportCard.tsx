@@ -21,7 +21,7 @@ interface Props {
   scoreType: ScoreType;
   lastImport?: string;
   rowCount?: number;
-  publishedCount?: number;
+  initialIsPublished?: boolean;
 }
 
 export function ImportCard({
@@ -29,12 +29,13 @@ export function ImportCard({
   scoreType,
   lastImport,
   rowCount = 0,
-  publishedCount = 0,
+  initialIsPublished = false,
 }: Props) {
   const Icon = SCORE_TYPE_ICON[scoreType];
   const [fetching, setFetching] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState(initialIsPublished);
 
   const handleFetch = async () => {
     setFetching(true);
@@ -44,6 +45,7 @@ export function ImportCard({
       const data = await res.json();
       if (res.ok) {
         setMessage(`✓ Imported ${data.rowsImported} rows (${data.rowsFailed} failed)`);
+        setIsPublished(false); // Switched to unpublished upon fetching new data
       } else {
         setMessage(`✗ ${data.error ?? "Import failed"}`);
       }
@@ -62,6 +64,7 @@ export function ImportCard({
       const data = await res.json();
       if (res.ok) {
         setMessage(`✓ Published ${data.count} scores`);
+        setIsPublished(true); // Switched to published upon publishing
       } else {
         setMessage(`✗ ${data.error ?? "Publish failed"}`);
       }
@@ -82,8 +85,8 @@ export function ImportCard({
             </div>
             <CardTitle>{title}</CardTitle>
           </div>
-          <Badge variant={publishedCount > 0 ? "success" : "muted"}>
-            {publishedCount > 0 ? "Published" : "Unpublished"}
+          <Badge variant={isPublished ? "success" : "muted"}>
+            {isPublished ? "Published" : "Unpublished"}
           </Badge>
         </div>
         <CardDescription>

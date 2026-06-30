@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -49,12 +51,15 @@ export default async function AdminStudentDetail({
     mcqMax: s.mcq_max,
     shortMax: s.short_answer_max,
     longMax: s.long_answer_max,
+    subject: s.subject,
   }));
 
   const offlineTestChartData: OfflineTestChartData[] = offlineTests.map((s) => ({
     week: s.week_number as 1 | 5 | 10,
     score: s.score,
     maxScore: s.max_score,
+    subject: s.subject,
+    topic: s.topic,
   }));
 
   const quizChartData: QuizChartData[] = quizzes.map((s) => ({

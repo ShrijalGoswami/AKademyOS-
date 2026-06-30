@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -13,6 +15,8 @@ import { ImportLog, StudentSummary } from "@/types";
 
 interface HwRow {
   user_email: string;
+  published: boolean;
+  subject: string | null;
   mcq_score: number;
   short_answer_score: number;
   long_answer_score: number;
@@ -39,20 +43,24 @@ export default async function AdminDashboard() {
     emails.length
       ? supabase
           .from("homework_scores")
-          .select("user_email, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
+          .select("user_email, published, subject, mcq_score, short_answer_score, long_answer_score, mcq_max, short_answer_max, long_answer_max")
           .in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("offline_test_scores").select("user_email").in("user_email", emails)
+      ? supabase.from("offline_test_scores").select("user_email, published, week_number").in("user_email", emails)
       : Promise.resolve({ data: [] }),
     emails.length
-      ? supabase.from("quiz_scores").select("user_email").in("user_email", emails)
+      ? supabase.from("quiz_scores").select("user_email, published").in("user_email", emails)
       : Promise.resolve({ data: [] }),
   ]);
 
   const hwRows = (hwRes.data ?? []) as HwRow[];
-  const otRows = (otRes.data ?? []) as { user_email: string }[];
-  const qzRows = (qzRes.data ?? []) as { user_email: string }[];
+  const otRows = (otRes.data ?? []) as { user_email: string; published: boolean; week_number: number }[];
+  const qzRows = (qzRes.data ?? []) as { user_email: string; published: boolean }[];
+
+  const isHwPublished = hwRows.length > 0 && hwRows.every((r) => r.published);
+  const isOtPublished = otRows.length > 0 && otRows.every((r) => r.published);
+  const isQzPublished = qzRows.length > 0 && qzRows.every((r) => r.published);
 
   const countBy = (arr: { user_email: string }[]) =>
     arr.reduce<Record<string, number>>((acc, r) => {
@@ -61,8 +69,20 @@ export default async function AdminDashboard() {
     }, {});
 
   const hwCountMap = countBy(hwRows);
-  const otMap = countBy(otRows);
   const qzMap = countBy(qzRows);
+
+  // Count unique weeks for offline tests
+  const otMap: Record<string, number> = {};
+  const otUniqueWeeks: Record<string, Set<number>> = {};
+  for (const r of otRows) {
+    if (!otUniqueWeeks[r.user_email]) {
+      otUniqueWeeks[r.user_email] = new Set();
+    }
+    otUniqueWeeks[r.user_email].add(r.week_number);
+  }
+  for (const email of Object.keys(otUniqueWeeks)) {
+    otMap[email] = otUniqueWeeks[email].size;
+  }
 
   // Per-student homework percentage (sum of all weeks)
   const pctSum: Record<string, { sum: number; n: number }> = {};
@@ -135,18 +155,21 @@ export default async function AdminDashboard() {
                 scoreType="homework"
                 lastImport={logs.find((l) => l.score_type === "homework")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.homework_count, 0)}
+                initialIsPublished={isHwPublished}
               />
               <ImportCard
                 title="Offline Tests"
                 scoreType="offline_test"
                 lastImport={logs.find((l) => l.score_type === "offline_test")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.offline_test_count, 0)}
+                initialIsPublished={isOtPublished}
               />
               <ImportCard
                 title="Quizzes"
                 scoreType="quiz"
                 lastImport={logs.find((l) => l.score_type === "quiz")?.created_at}
                 rowCount={students.reduce((a, s) => a + s.quiz_count, 0)}
+                initialIsPublished={isQzPublished}
               />
             </div>
           </div>

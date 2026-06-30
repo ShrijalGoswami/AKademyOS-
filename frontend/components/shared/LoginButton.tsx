@@ -7,7 +7,9 @@ export function LoginButton() {
   return (
     <Button
       size="lg"
-      onClick={() => signIn("google", { callbackUrl: "/dashboard/student" })}
+      onClick={() => {
+        signIn("google", { callbackUrl: "/dashboard/student" });
+      }}
       className="gap-3 text-base font-semibold px-8 py-3 h-auto"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">

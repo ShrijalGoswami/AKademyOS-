@@ -46,12 +46,19 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
               <TableHead>Week</TableHead>
               {type === "homework" && (
                 <>
+                  <TableHead>Subject</TableHead>
                   <TableHead>MCQ</TableHead>
                   <TableHead>Short Ans</TableHead>
                   <TableHead>Long Ans</TableHead>
                 </>
               )}
-              {type === "offline_test" && <TableHead>Score</TableHead>}
+              {type === "offline_test" && (
+                <>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Topic</TableHead>
+                  <TableHead>Score</TableHead>
+                </>
+              )}
               {type === "quiz" && (
                 <>
                   <TableHead>Quiz Title</TableHead>
@@ -78,6 +85,9 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
                     const r = row as HomeworkSheetRow;
                     return (
                       <>
+                        <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">
+                          {r.subject}
+                        </TableCell>
                         <TableCell>{r.mcq_score}/{r.mcq_max}</TableCell>
                         <TableCell>{r.short_answer_score}/{r.short_answer_max}</TableCell>
                         <TableCell>{r.long_answer_score}/{r.long_answer_max}</TableCell>
@@ -86,7 +96,15 @@ export function SheetPreviewTable({ type, rows, invalidEmails, onSave, saving }:
                   })()}
                   {type === "offline_test" && (() => {
                     const r = row as OfflineTestSheetRow;
-                    return <TableCell>{r.score}/{r.max_score}</TableCell>;
+                    return (
+                      <>
+                        <TableCell className="text-text-secondary uppercase font-semibold text-xs tracking-wider">
+                          {r.subject}
+                        </TableCell>
+                        <TableCell className="text-text-primary">{r.topic}</TableCell>
+                        <TableCell>{r.score}/{r.max_score}</TableCell>
+                      </>
+                    );
                   })()}
                   {type === "quiz" && (() => {
                     const r = row as QuizSheetRow;

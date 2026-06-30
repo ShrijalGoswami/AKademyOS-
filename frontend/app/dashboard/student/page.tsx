@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -43,12 +45,15 @@ export default async function StudentDashboard() {
     mcqMax: s.mcq_max,
     shortMax: s.short_answer_max,
     longMax: s.long_answer_max,
+    subject: s.subject,
   }));
 
   const offlineTestChartData: OfflineTestChartData[] = offlineTests.map((s) => ({
     week: s.week_number as 1 | 5 | 10,
     score: s.score,
     maxScore: s.max_score,
+    subject: s.subject,
+    topic: s.topic,
   }));
 
   const quizChartData: QuizChartData[] = quizzes.map((s) => ({
@@ -68,11 +73,11 @@ export default async function StudentDashboard() {
     ? Math.round(trend.reduce((a, t) => a + t.percent, 0) / trend.length)
     : 0;
 
-  const firstName = session.user.name?.split(" ")[0] ?? "there";
+  const fullName = session.user.name ?? "there";
 
   return (
     <>
-      <Topbar title="Student Dashboard" subtitle={`Good to see you, ${firstName} 👋`} />
+      <Topbar title="Student Dashboard" subtitle={`Good to see you, ${fullName} 👋`} />
 
       <div className="space-y-8 p-6">
         {/* Stat cards */}
@@ -80,7 +85,7 @@ export default async function StudentDashboard() {
           <StatCard icon={TrendingUp} value={`${avgScore}%`} label="Average Homework Score" sublabel={`across ${trend.length} week${trend.length === 1 ? "" : "s"}`} />
           <StatCard icon={BookOpen} value={homework.length} label="Homework Weeks" iconColor="text-accent" iconBg="bg-accent/10" />
           <StatCard icon={Zap} value={quizzes.length} label="Quizzes Completed" iconColor="text-warning" iconBg="bg-warning/10" />
-          <StatCard icon={ClipboardList} value={offlineTests.length} label="Offline Tests Taken" iconColor="text-primary" iconBg="bg-primary/10" />
+          <StatCard icon={ClipboardList} value={new Set(offlineTests.map((t) => t.week_number)).size} label="Offline Tests Taken" iconColor="text-primary" iconBg="bg-primary/10" />
         </section>
 
         {/* Score overview charts */}

@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatScore(score: number, max: number): string {
+  if (max === 0) return "Not attempted";
   const pct = max > 0 ? Math.round((score / max) * 100) : 0;
   return `${score}/${max} (${pct}%)`;
 }

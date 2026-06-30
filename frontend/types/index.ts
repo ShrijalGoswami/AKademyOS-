@@ -36,6 +36,7 @@ export interface HomeworkScore {
   id: string;
   user_email: string;
   week_number: number;
+  subject: string | null;
   mcq_score: number;
   short_answer_score: number;
   long_answer_score: number;
@@ -50,6 +51,8 @@ export interface OfflineTestScore {
   id: string;
   user_email: string;
   week_number: 1 | 5 | 10;
+  subject: string | null;
+  topic: string | null;
   score: number;
   max_score: number;
   published: boolean;
@@ -61,6 +64,7 @@ export interface QuizScore {
   user_email: string;
   week_number: number;
   quiz_title: string | null;
+  subject: string | null;
   score: number;
   max_score: number;
   published: boolean;
@@ -89,12 +93,15 @@ export interface HomeworkChartData {
   mcqMax: number;
   shortMax: number;
   longMax: number;
+  subject?: string | null;
 }
 
 export interface OfflineTestChartData {
   week: 1 | 5 | 10;
   score: number;
   maxScore: number;
+  subject?: string | null;
+  topic?: string | null;
 }
 
 export interface QuizChartData {
@@ -109,25 +116,31 @@ export interface QuizChartData {
 export interface HomeworkSheetRow {
   email: string;
   week: number;
+  subject: string;
   mcq_score: number;
   mcq_max: number;
   short_answer_score: number;
   short_answer_max: number;
   long_answer_score: number;
   long_answer_max: number;
+  scholar_name?: string;
 }
 
 export interface OfflineTestSheetRow {
   email: string;
   week: number;
+  subject: string;
+  topic: string;
   score: number;
   max_score: number;
+  scholar_name?: string;
 }
 
 export interface QuizSheetRow {
   email: string;
   week: number;
   quiz_title: string;
+  subject: string;
   score: number;
   max_score: number;
 }

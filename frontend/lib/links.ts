@@ -1,4 +1,4 @@
-import { Bot, Sparkles, ListChecks, BookOpen, type LucideIcon } from "lucide-react";
+import { Monitor, Sparkles, ListChecks, BookOpen, FolderOpen, type LucideIcon } from "lucide-react";
 
 export interface StudentLink {
   key: string;
@@ -18,32 +18,40 @@ export interface StudentLink {
  */
 export const STUDENT_LINKS: StudentLink[] = [
   {
-    key: "ai-agent",
-    label: "AI Agent",
-    description: "Ask the study assistant",
-    url: "/dashboard/student/ask-ak",
-    icon: Bot,
-    internal: true,
-  },
-  {
     key: "akademy-plus",
-    label: "Akademy+",
-    description: "Premium learning hub",
-    url: "https://REPLACE_ME/akademy-plus",
+    label: "AKademy+",
+    description: "Premium online video library",
+    url: "https://akademyplus.vercel.app/login",
     icon: Sparkles,
   },
   {
     key: "eduquiz8",
-    label: "Eduquiz8",
+    label: "Educ8",
     description: "Practice quizzes",
-    url: "https://REPLACE_ME/eduquiz8",
+    url: "https://educ8quizz.netlify.app/",
     icon: ListChecks,
   },
   {
     key: "homework",
     label: "Homework",
-    description: "Submit & review homework",
-    url: "https://REPLACE_ME/homework",
+    description: "Submit and review homework",
+    url: "https://akademy38homework.netlify.app/",
     icon: BookOpen,
+  },
+  {
+    key: "resources",
+    label: "Resources",
+    description: "Access study materials and resources",
+    url: "/dashboard/student/resources",
+    icon: FolderOpen,
+    internal: true,
+  },
+  {
+    key: "ai-agent",
+    label: "A² (Ask AK)",
+    description: "24/7 Online Academic Mentor",
+    url: "/dashboard/student/ask-ak",
+    icon: Monitor,
+    internal: true,
   },
 ];

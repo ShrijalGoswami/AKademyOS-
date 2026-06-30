@@ -33,31 +33,104 @@ interface ChartTooltipProps {
 
 const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
+  const rowData = payload[0].payload;
+  
   return (
-    <div className="rounded-lg border border-border bg-surface-elevated p-3 shadow-xl text-xs">
-      <p className="mb-2 font-semibold text-text-primary">Week {label}</p>
-      {payload.map((p) => (
-        <div key={p.name} className="flex items-center gap-2 mb-1">
-          <span className="h-2 w-2 rounded-full" style={{ background: p.fill }} />
-          <span className="text-text-secondary">{p.name}:</span>
-          <span className="font-medium text-text-primary">{p.value}</span>
+    <div className="rounded-lg border border-border bg-surface-elevated p-3 shadow-xl text-xs max-w-sm">
+      <p className="mb-2 font-semibold text-text-primary text-sm">Week {label}</p>
+      {rowData.hasData ? (
+        <div className="space-y-3">
+          {/* Overall breakdown */}
+          <div className="space-y-1">
+            <p className="font-medium text-text-secondary text-[11px] mb-1">Overall Weekly Total:</p>
+            {payload.map((p: any) => {
+              let max = 0;
+              if (p.name === "MCQ") max = rowData.mcqMax;
+              else if (p.name === "Short Ans") max = rowData.shortMax;
+              else if (p.name === "Long Ans") max = rowData.longMax;
+              
+              const displayValue = max === 0 ? "Not attempted" : `${p.value}/${max}`;
+              
+              return (
+                <div key={p.name} className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ background: p.fill }} />
+                  <span className="text-text-secondary">{p.name}:</span>
+                  <span className="font-medium text-text-primary">{displayValue}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Subject-wise breakdown */}
+          {rowData.subjects && rowData.subjects.length > 0 && (
+            <div className="pt-2 border-t border-border space-y-1.5">
+              <p className="font-medium text-text-secondary text-[11px] mb-1">Subject Breakdown:</p>
+              {rowData.subjects.map((s: any, idx: number) => (
+                <div key={idx} className="space-y-0.5 pl-1.5 border-l-2 border-primary/20">
+                  <p className="font-semibold text-text-primary uppercase text-[10px] tracking-wider">{s.subject}</p>
+                  <p className="text-[10px] text-text-muted">
+                    MCQ: <span className="text-text-secondary font-medium">{s.mcq}/{s.mcqMax}</span> |{" "}
+                    Short: <span className="text-text-secondary font-medium">{s.short}/{s.shortMax}</span> |{" "}
+                    Long: <span className="text-text-secondary font-medium">{s.long}/{s.longMax}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ))}
+      ) : (
+        <p className="text-text-muted">No homework scores published.</p>
+      )}
     </div>
   );
 };
 
 export function HomeworkBarChart({ scores }: Props) {
-  const scoreMap = Object.fromEntries(scores.map((s) => [s.week, s]));
+  // Aggregate scores by week (summing up MCQ, Short, and Long scores/max scores)
+  const weeklyAggregates: Record<number, {
+    mcq: number;
+    mcqMax: number;
+    short: number;
+    shortMax: number;
+    long: number;
+    longMax: number;
+    subjects: { subject: string; mcq: number; mcqMax: number; short: number; shortMax: number; long: number; longMax: number }[];
+  }> = {};
+
+  for (const s of scores) {
+    if (!weeklyAggregates[s.week]) {
+      weeklyAggregates[s.week] = { mcq: 0, mcqMax: 0, short: 0, shortMax: 0, long: 0, longMax: 0, subjects: [] };
+    }
+    weeklyAggregates[s.week].mcq += s.mcq;
+    weeklyAggregates[s.week].mcqMax += s.mcqMax;
+    weeklyAggregates[s.week].short += s.short;
+    weeklyAggregates[s.week].shortMax += s.shortMax;
+    weeklyAggregates[s.week].long += s.long;
+    weeklyAggregates[s.week].longMax += s.longMax;
+    weeklyAggregates[s.week].subjects.push({
+      subject: s.subject ?? "General",
+      mcq: s.mcq,
+      mcqMax: s.mcqMax,
+      short: s.short,
+      shortMax: s.shortMax,
+      long: s.long,
+      longMax: s.longMax,
+    });
+  }
 
   const data = ALL_WEEKS.map((w) => {
-    const s = scoreMap[w];
+    const agg = weeklyAggregates[w];
+    const hasData = !!agg;
     return {
       week: w,
-      MCQ: s?.mcq ?? 0,
-      "Short Ans": s?.short ?? 0,
-      "Long Ans": s?.long ?? 0,
-      hasData: !!s,
+      MCQ: agg?.mcq ?? 0,
+      mcqMax: agg?.mcqMax ?? 0,
+      "Short Ans": agg?.short ?? 0,
+      shortMax: agg?.shortMax ?? 0,
+      "Long Ans": agg?.long ?? 0,
+      longMax: agg?.longMax ?? 0,
+      hasData,
+      subjects: agg?.subjects ?? [],
     };
   });
 
@@ -73,7 +146,7 @@ export function HomeworkBarChart({ scores }: Props) {
           tickLine={false}
         />
         <YAxis
-          domain={[0, 100]}
+          domain={[0, (dataMax: number) => Math.max(30, Math.ceil((dataMax || 0) / 10) * 10)]}
           tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}

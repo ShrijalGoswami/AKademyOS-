@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SheetPreviewTable } from "@/components/admin/SheetPreviewTable";
 import { ImportLogsTable } from "@/components/admin/ImportLogsTable";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { SidebarToggle } from "@/components/layout/SidebarToggle";
 import { ScoreType, ImportLog } from "@/types";
 
 type PreviewState = {
@@ -88,7 +89,8 @@ export default function ImportDetailPage() {
   return (
     <main className="min-h-screen bg-background">
       <div className="border-b border-border bg-surface px-4 py-4 sm:px-8">
-        <div className="mx-auto max-w-5xl flex items-center gap-4">
+        <div className="mx-auto max-w-5xl flex items-center gap-3">
+          <SidebarToggle />
           <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
