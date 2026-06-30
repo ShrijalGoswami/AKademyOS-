@@ -238,7 +238,7 @@ export default function AskAK() {
             </h2>
             <p style={styles.welcomeSub}>
               Pick a subject and ask me anything in Maths, Science, or English - I&apos;m
-              always here to help.
+              always here to help😊.
             </p>
 
             {isEmpty && (
