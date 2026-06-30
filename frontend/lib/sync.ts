@@ -1,63 +1,97 @@
-import { syncScoreType } from "@/lib/sync";
-import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { ScoreType } from "@/types";
 import {
   fetchHomeworkSheet,
   fetchOfflineTestSheet,
   fetchQuizSheet,
 } from "@/lib/sheets";
+import { ScoreType } from "@/types";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { type: string } }
+export async function syncScoreType(
+  type: ScoreType,
+  publishImmediately: boolean,
+  executorEmail: string
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const type = params.type as ScoreType;
   const supabase = createSupabaseAdminClient();
 
+  let rows: any[] = [];
+  let rowsImported = 0;
+  let rowsFailed = 0;
+  const errors: string[] = [];
+  let status: "success" | "failed" | "partial" = "success";
+  let logData: any = null;
+
   try {
-    const rows = await fetchRows(type);
+    rows = await fetchRows(type);
     const validEmails = await getValidEmails(supabase);
 
     // Name-Matching & Username Fallbacks
     await resolveEmails(rows, type, supabase, validEmails);
 
-    const invalidEmails = rows
-      .map((r: any) => r.email)
-      .filter((e: string) => !validEmails.has(e));
+    const validRows = rows.filter((r) => validEmails.has(r.email));
+    rowsFailed = rows.length - validRows.length;
 
-    return NextResponse.json({ rows, invalidEmails });
+    if (validRows.length > 0) {
+      const upsertData = buildUpsertData(type, validRows, publishImmediately);
+      
+      // Deduplicate upsertData to avoid PostgreSQL "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
+      const uniqueDataMap = new Map<string, any>();
+      for (const row of upsertData as any[]) {
+        const key = type === "quiz"
+          ? `${row.user_email}_${row.week_number}_${row.quiz_title}`
+          : type === "offline_test"
+          ? `${row.user_email}_${row.week_number}_${row.subject}_${row.topic}`
+          : type === "homework"
+          ? `${row.user_email}_${row.week_number}_${row.subject}`
+          : `${row.user_email}_${row.week_number}`;
+        uniqueDataMap.set(key, row);
+      }
+      const deduplicatedData = Array.from(uniqueDataMap.values());
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from(tableFor(type)) as any).upsert(deduplicatedData, {
+        onConflict: 
+          type === "quiz" 
+            ? "user_email,week_number,quiz_title" 
+            : type === "offline_test"
+            ? "user_email,week_number,subject,topic"
+            : type === "homework"
+            ? "user_email,week_number,subject"
+            : "user_email,week_number",
+      });
+
+      if (error) {
+        errors.push(error.message);
+        rowsFailed = rows.length;
+      } else {
+        rowsImported = deduplicatedData.length;
+        rowsFailed = rows.length - deduplicatedData.length;
+      }
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { type: string } }
-) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    errors.push(msg);
+    rowsFailed = rows.length;
   }
 
-  const type = params.type as ScoreType;
+  status = rowsFailed === 0 ? "success" : rowsImported === 0 ? "failed" : "partial";
 
-  try {
-    const result = await syncScoreType(type, false, session.user.email!);
-    return NextResponse.json(result);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  const { data: log } = await supabase
+    .from("import_logs")
+    .insert({
+      admin_email: executorEmail,
+      score_type: type,
+      spreadsheet_id: spreadsheetIdFor(type),
+      rows_imported: rowsImported,
+      rows_failed: rowsFailed,
+      status,
+      error_details: errors.length ? { errors } : null,
+    })
+    .select()
+    .single();
+
+  logData = log;
+
+  return { rowsImported, rowsFailed, status, log: logData };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -89,7 +123,7 @@ function spreadsheetIdFor(type: ScoreType): string {
   return process.env.GOOGLE_SHEETS_QUIZ_SPREADSHEET_ID ?? "";
 }
 
-function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
+function buildUpsertData(type: ScoreType, rows: Record<string, any>[], publishImmediately: boolean) {
   if (type === "homework") {
     return rows.map((r) => ({
       user_email: r.email,
@@ -101,7 +135,7 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
       short_answer_max: r.short_answer_max,
       long_answer_score: r.long_answer_score,
       long_answer_max: r.long_answer_max,
-      published: false,
+      published: publishImmediately,
       updated_at: new Date().toISOString(),
     }));
   }
@@ -113,7 +147,7 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
       topic: r.topic,
       score: r.score,
       max_score: r.max_score,
-      published: false,
+      published: publishImmediately,
       updated_at: new Date().toISOString(),
     }));
   }
@@ -124,7 +158,7 @@ function buildUpsertData(type: ScoreType, rows: Record<string, unknown>[]) {
     subject: r.subject,
     score: r.score,
     max_score: r.max_score,
-    published: false,
+    published: publishImmediately,
     updated_at: new Date().toISOString(),
   }));
 }
@@ -141,7 +175,7 @@ async function resolveEmails(
   for (const r of rows) {
     let emailVal = r.email ? String(r.email).trim().toLowerCase() : "";
 
-    // 1. If email doesn't contain "@", check if it matches a prefix of an existing profile email
+    // If email doesn't contain "@", check if it matches a prefix of an existing profile email
     if (emailVal && !emailVal.includes("@")) {
       const prefixMatch = profileList.filter((p) => {
         const pEmail = String(p.email || "").trim().toLowerCase();
@@ -152,7 +186,5 @@ async function resolveEmails(
         r.email = emailVal;
       }
     }
-
-    // 2. Name-matching fallback removed per user request (relying entirely on direct email checking)
   }
 }

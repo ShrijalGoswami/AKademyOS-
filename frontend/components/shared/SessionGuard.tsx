@@ -20,8 +20,10 @@ export function SessionGuard() {
   const { status } = useSession();
 
   useEffect(() => {
+    console.log("[SessionGuard] Checking status:", status, "isLoggedIn sessionStorage:", sessionStorage.getItem("isLoggedIn"));
     if (status !== "authenticated") return;
     if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      console.warn("[SessionGuard] Triggering automatic logout because 'isLoggedIn' flag is missing in sessionStorage.");
       signOut({ callbackUrl: "/" });
     }
   }, [status]);
