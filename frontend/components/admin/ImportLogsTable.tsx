@@ -3,6 +3,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ImportLog } from "@/types";
+import { LocalDate } from "@/components/shared/LocalDate";
 
 interface Props {
   logs: ImportLog[];
@@ -32,7 +33,7 @@ export function ImportLogsTable({ logs }: Props) {
           {logs.map((log) => (
             <TableRow key={log.id}>
               <TableCell className="text-text-muted text-xs">
-                {new Date(log.created_at).toLocaleString()}
+                <LocalDate date={log.created_at} />
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="capitalize">

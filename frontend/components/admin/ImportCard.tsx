@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ScoreType } from "@/types";
 
+import { LocalDate } from "@/components/shared/LocalDate";
+
 // Icons live here (a Client Component) so Server Components don't have to pass
 // a function across the server/client boundary.
 const SCORE_TYPE_ICON: Record<ScoreType, LucideIcon> = {
@@ -90,9 +92,13 @@ export function ImportCard({
           </Badge>
         </div>
         <CardDescription>
-          {lastImport
-            ? `Last import: ${new Date(lastImport).toLocaleDateString()}`
-            : "No imports yet"}
+          {lastImport ? (
+            <>
+              Last import: <LocalDate date={lastImport} showTime={false} />
+            </>
+          ) : (
+            "No imports yet"
+          )}
           {rowCount > 0 && ` · ${rowCount} rows`}
         </CardDescription>
       </CardHeader>
