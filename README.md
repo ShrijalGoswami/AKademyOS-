@@ -217,7 +217,7 @@ frontend/
 │   ├── dashboard/      # StudentHeader, ScoreGraphTabs, ScoreSummaryTable,
 │   │                   # ProgressTrendChart, QuickActions
 │   ├── layout/         # Sidebar, SidebarContext, SidebarToggle
-│   ├── shared/         # LoginButton, LoadingSpinner, Providers, SessionGuard
+│   ├── shared/         # LoginButton, LoadingSpinner, Providers
 │   ├── ask-ak/         # AskAK (chat UI with Markdown + LaTeX)
 │   └── ui/             # Radix UI primitives
 ├── lib/
