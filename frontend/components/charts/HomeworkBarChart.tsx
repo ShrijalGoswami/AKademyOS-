@@ -20,7 +20,18 @@ interface Props {
 const ALL_WEEKS = Array.from({ length: 10 }, (_, i) => i + 1);
 const EMPTY_COLOR = "var(--border-color)";
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  name?: string;
+  value?: number | string;
+  fill?: string;
+}
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const rowData = payload[0].payload;
   

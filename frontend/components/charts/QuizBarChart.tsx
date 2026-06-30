@@ -15,18 +15,28 @@ interface Props {
   scores: QuizChartData[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  value?: number | string;
+  payload?: { quizTitle?: string; maxScore?: number };
+}
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
     <div className="rounded-lg border border-border bg-surface-elevated p-3 shadow-xl text-xs">
       <p className="mb-1 font-semibold text-text-primary">Week {label}</p>
-      {d.payload.quizTitle && (
+      {d.payload?.quizTitle && (
         <p className="text-text-muted mb-1">{d.payload.quizTitle}</p>
       )}
       <p className="text-text-secondary">
         Score: <span className="font-medium text-text-primary">{d.value}</span>
-        <span className="text-text-muted"> / {d.payload.maxScore}</span>
+        <span className="text-text-muted"> / {d.payload?.maxScore}</span>
       </p>
     </div>
   );
