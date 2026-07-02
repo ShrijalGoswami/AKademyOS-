@@ -192,3 +192,35 @@ export interface StudentCalendarActivity {
   entry_count: number;
 }
 
+// ─── Chat Types ──────────────────────────────────────────────────────────────
+
+export type ChatSenderRole = "student" | "admin";
+
+export interface ChatConversation {
+  id: string;
+  student_id: string;
+  student_email: string;
+  status: "open" | "closed";
+  last_message: string | null;
+  last_message_at: string | null;
+  unread_admin: number;
+  unread_student: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  sender_role: ChatSenderRole;
+  sender_email: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+// Conversation enriched with the student's display name for the admin inbox.
+export interface ChatConversationSummary extends ChatConversation {
+  student_name: string | null;
+}
+

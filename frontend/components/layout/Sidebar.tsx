@@ -14,6 +14,7 @@ import {
   LogOut,
   FolderOpen,
   Calendar,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,12 +34,14 @@ const NAV: Record<"student" | "admin", NavItem[]> = {
     { label: "Quick Links", href: "/dashboard/student#quick-links", icon: LinkIcon },
     { label: "Resources", href: "/dashboard/student/resources", icon: FolderOpen },
     { label: "Calendar", href: "/dashboard/student/calendar", icon: Calendar },
+    { label: "Chat with Teacher", href: "/dashboard/student/chat", icon: MessageCircle },
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
     { label: "Students", href: "/dashboard/admin#students", icon: Users },
     { label: "Imports", href: "/dashboard/admin#imports", icon: Upload },
     { label: "Calendar", href: "/dashboard/admin/calendar", icon: Calendar },
+    { label: "Chats", href: "/dashboard/admin/chat", icon: MessageCircle },
   ],
 };
 
