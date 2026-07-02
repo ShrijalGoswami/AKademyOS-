@@ -163,3 +163,32 @@ export interface StudentSummary {
   offline_test_count: number;
   quiz_count: number;
 }
+
+// ─── Calendar Types ──────────────────────────────────────────────────────────
+
+export interface CalendarEntry {
+  entry_id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  is_locked: boolean;
+}
+
+export interface StudentCalendar {
+  id: string;
+  full_name: string;
+  email: string;
+  calendar_data: CalendarEntry[];
+  last_modified_at: string;
+  created_at: string;
+}
+
+export interface StudentCalendarActivity {
+  full_name: string;
+  email: string;
+  last_modified_at: string;
+  entry_count: number;
+}
+

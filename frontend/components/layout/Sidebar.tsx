@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -12,6 +13,7 @@ import {
   LineChart,
   LogOut,
   FolderOpen,
+  Calendar,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,11 +32,13 @@ const NAV: Record<"student" | "admin", NavItem[]> = {
     { label: "My Scores", href: "/dashboard/student#scores", icon: LineChart },
     { label: "Quick Links", href: "/dashboard/student#quick-links", icon: LinkIcon },
     { label: "Resources", href: "/dashboard/student/resources", icon: FolderOpen },
+    { label: "Calendar", href: "/dashboard/student/calendar", icon: Calendar },
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
     { label: "Students", href: "/dashboard/admin#students", icon: Users },
     { label: "Imports", href: "/dashboard/admin#imports", icon: Upload },
+    { label: "Calendar", href: "/dashboard/admin/calendar", icon: Calendar },
   ],
 };
 
@@ -55,6 +59,24 @@ interface Props {
 export function Sidebar({ name, email, image, role }: Props) {
   const pathname = usePathname();
   const { open, setOpen } = useSidebar();
+  const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    setHash(window.location.hash);
+
+    const handleHashChange = () => {
+      setHash(window.location.hash);
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    window.addEventListener("popstate", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handleHashChange);
+    };
+  }, [pathname]);
+
   const items = NAV[role === "admin" ? "admin" : "student"];
   const initials = name
     ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -113,12 +135,21 @@ export function Sidebar({ name, email, image, role }: Props) {
             Main
           </p>
           {items.map((item) => {
-            const active = pathname === item.href.split("#")[0] && item.href === items[0].href;
+            const itemHasHash = item.href.includes("#");
+            const [itemPath, itemHash] = item.href.split("#");
+            const active = itemHasHash
+              ? pathname === itemPath && hash === `#${itemHash}`
+              : pathname === item.href && !hash;
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  const parts = item.href.split("#");
+                  setHash(parts[1] ? `#${parts[1]}` : "");
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
